@@ -25,8 +25,10 @@ export function CardFace({ card, view, guessed, fresh, hard, over }: Props) {
   const [flipped, setFlipped] = useState(false)
   const [imageFailed, setImageFailed] = useState(false)
   const version = guessed.size + (over ? 100 : 0)
-  const [nameRef, nameScale] = useFit<HTMLSpanElement>(version, 'x')
-  const [textRef, textScale] = useFit<HTMLDivElement>(version, 'y', 0.5)
+  const [nameRef, nameScale] = useFit<HTMLSpanElement>(version, 'x', 0.45)
+  const [typeRef, typeScale] = useFit<HTMLDivElement>(version, 'x', 0.5)
+  const [textRef, textScale] = useFit<HTMLDivElement>(version, 'y', 0.4)
+  const [artistRef, artistScale] = useFit<HTMLDivElement>(version, 'x', 0.6)
 
   useEffect(() => {
     if (!over) return
@@ -58,7 +60,7 @@ export function CardFace({ card, view, guessed, fresh, hard, over }: Props) {
               </span>
             </div>
             <div className="art" />
-            <div className="bar type-bar">
+            <div className="bar type-bar" ref={typeRef} style={{ '--fit': typeScale } as CSSProperties}>
               <TokenText tokens={view.types} {...shared} />
             </div>
             <div className="textbox" ref={textRef} style={{ '--fit': textScale } as CSSProperties}>
@@ -78,7 +80,7 @@ export function CardFace({ card, view, guessed, fresh, hard, over }: Props) {
             </div>
           )}
           {view.artist.length > 0 && (
-            <div className="artist">
+            <div className="artist" ref={artistRef} style={{ '--fit': artistScale } as CSSProperties}>
               <span className="brush" aria-hidden>
                 ✎
               </span>{' '}

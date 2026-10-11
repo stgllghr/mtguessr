@@ -1,48 +1,80 @@
-// "Guess the card" dialog with autocomplete over card names.
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
-import { normalizeName } from '../game/card'
+// "Guess the card": type into the card name's blanks. No suggestions, so the dialog gives
+// away nothing the card doesn't already show.
+import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type SyntheticEvent } from 'react'
+import { composeName, hiddenSlots, sanitizeEntry } from '../game/nameEntry'
+import { isRevealed, type Token } from '../game/tokens'
+import { Sym } from './Sym'
 
-export type NameIndex = { name: string; norm: string }[]
-
-type Props = { index: NameIndex; tries: number; onGuess: (name: string) => void; onClose: () => void }
-
-function suggest(index: NameIndex, query: string): string[] {
-  const q = normalizeName(query)
-  if (q.length < 2) return []
-  const starts: string[] = []
-  const contains: string[] = []
-  for (const { name, norm } of index) {
-    if (norm.startsWith(q)) starts.push(name)
-    else if (contains.length < 8 && norm.includes(q)) contains.push(name)
-    if (starts.length >= 8) break
-  }
-  return [...starts, ...contains].slice(0, 8)
+type Props = {
+  tokens: Token[] // the card name
+  guessed: ReadonlySet<string>
+  tries: number
+  onGuess: (name: string) => void
+  onClose: () => void
 }
 
-export function NameGuess({ index, tries, onGuess, onClose }: Props) {
-  const [text, setText] = useState('')
-  const [active, setActive] = useState(-1)
+function splitWords(tokens: Token[]): Token[][] {
+  const words: Token[][] = [[]]
+  for (const t of tokens) {
+    if (t.kind === 'char' && t.ch === ' ') words.push([])
+    else if (t.kind !== 'nl') words[words.length - 1].push(t)
+  }
+  return words.filter((w) => w.length > 0)
+}
+
+// Typing only ever appends or deletes at the end, so keep the caret there.
+function caretToEnd(e: SyntheticEvent<HTMLInputElement>) {
+  const el = e.currentTarget
+  const end = el.value.length
+  if (el.selectionStart !== end || el.selectionEnd !== end) el.setSelectionRange(end, end)
+}
+
+export function NameGuess({ tokens, guessed, tries, onGuess, onClose }: Props) {
+  const total = hiddenSlots(tokens, guessed)
+  const [typed, setTyped] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
-  const options = useMemo(() => suggest(index, text), [index, text])
+  const complete = typed.length === total
+  const words = splitWords(tokens)
+  const longest = Math.max(...words.map((w) => w.length))
 
   useEffect(() => inputRef.current?.focus(), [])
 
-  const submit = (name: string) => {
-    if (name.trim()) onGuess(name)
+  const submit = () => {
+    if (complete) onGuess(composeName(tokens, guessed, typed))
   }
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Escape') onClose()
-    else if (e.key === 'ArrowDown' && options.length) {
+    else if (e.key === 'Enter') {
       e.preventDefault()
-      setActive((a) => (a + 1) % options.length)
-    } else if (e.key === 'ArrowUp' && options.length) {
-      e.preventDefault()
-      setActive((a) => (a <= 0 ? options.length - 1 : a - 1))
-    } else if (e.key === 'Enter') {
-      e.preventDefault()
-      submit(active >= 0 ? options[active] : text)
+      submit()
     }
+  }
+
+  let blank = 0
+  const cell = (t: Token, i: number) => {
+    if (t.kind === 'char' && !isRevealed(t, guessed)) {
+      const index = blank++
+      const ch = typed[index]
+      const cls = `cell${ch ? ' filled' : ''}${index === typed.length ? ' next' : ''}`
+      return (
+        <span key={i} className={cls}>
+          {ch ?? ''}
+        </span>
+      )
+    }
+    if (t.kind === 'char' && t.key === null) {
+      return (
+        <span key={i} className="cell-punct">
+          {t.ch}
+        </span>
+      )
+    }
+    return (
+      <span key={i} className="cell fixed">
+        {t.kind === 'char' ? t.ch.toUpperCase() : t.kind === 'sym' ? <Sym sym={t.sym} /> : null}
+      </span>
+    )
   }
 
   return (
@@ -50,48 +82,33 @@ export function NameGuess({ index, tries, onGuess, onClose }: Props) {
       <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="name-guess-title">
         <h2 id="name-guess-title">Guess the card</h2>
         <p className="dialog-note">
-          A guess costs 1 of your {tries} {tries === 1 ? 'try' : 'tries'}.
+          Fill in the blanks. A guess costs 1 of your {tries} {tries === 1 ? 'try' : 'tries'}.
         </p>
-        <input
-          ref={inputRef}
-          className="name-input"
-          value={text}
-          onChange={(e) => {
-            setText(e.target.value)
-            setActive(-1)
-          }}
-          onKeyDown={onKeyDown}
-          placeholder="Card name"
-          autoComplete="off"
-          autoCapitalize="words"
-          spellCheck={false}
-          role="combobox"
-          aria-expanded={options.length > 0}
-          aria-controls="name-options"
-          aria-activedescendant={active >= 0 ? `name-opt-${active}` : undefined}
-        />
-        {options.length > 0 && (
-          <ul className="options" id="name-options" role="listbox">
-            {options.map((o, i) => (
-              <li
-                key={o}
-                id={`name-opt-${i}`}
-                role="option"
-                aria-selected={i === active}
-                className={i === active ? 'active' : ''}
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => submit(o)}
-              >
-                {o}
-              </li>
-            ))}
-          </ul>
-        )}
+        <div className="entry" style={{ '--chars': longest } as CSSProperties}>
+          {words.map((w, i) => (
+            <span key={i} className="entry-word">
+              {w.map(cell)}
+            </span>
+          ))}
+          <input
+            ref={inputRef}
+            className="entry-input"
+            value={typed}
+            onChange={(e) => setTyped(sanitizeEntry(e.target.value, total))}
+            onKeyDown={onKeyDown}
+            onSelect={caretToEnd}
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="characters"
+            spellCheck={false}
+            aria-label={`Card name: ${typed.length} of ${total} blanks filled`}
+          />
+        </div>
         <div className="dialog-actions">
           <button type="button" className="btn" onClick={onClose}>
             Cancel
           </button>
-          <button type="button" className="btn btn-primary" onClick={() => submit(text)} disabled={!text.trim()}>
+          <button type="button" className="btn btn-primary" onClick={submit} disabled={!complete}>
             Guess
           </button>
         </div>

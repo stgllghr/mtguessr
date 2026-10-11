@@ -403,7 +403,7 @@ a {
 /* ---------- The card ---------- */
 
 .card-flip {
-  --card-w: clamp(240px, min(100%, 380px, calc((100dvh - 340px) * 0.716)), 380px);
+  --card-w: clamp(260px, min(100%, 420px, calc((100dvh - 330px) * 0.716)), 420px);
   width: var(--card-w);
   container-type: inline-size;
   perspective: 1400px;
@@ -529,7 +529,7 @@ a {
 }
 
 .type-bar {
-  font-size: 4.6cqw;
+  font-size: calc(4.6cqw * var(--fit, 1));
   overflow: hidden;
 }
 
@@ -602,7 +602,7 @@ a {
   color: #ece4d6;
   font-family: var(--ui);
   font-weight: 700;
-  font-size: 3cqw;
+  font-size: calc(3cqw * var(--fit, 1));
   white-space: nowrap;
 }
 
@@ -933,44 +933,77 @@ a {
   font-size: 15px;
 }
 
-.name-input {
-  width: 100%;
-  height: 48px;
-  padding: 0 14px;
+.entry {
+  --cell: min(34px, calc((min(100vw, 460px) - 84px) / var(--chars) - 3px));
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  column-gap: calc(var(--cell) * 0.9);
+  row-gap: 10px;
+  padding: 16px 10px;
+  border-radius: 10px;
+  background: var(--umber);
   border: 1px solid var(--bark-hi);
-  border-radius: 10px;
-  background: var(--umber);
-  color: var(--parchment);
-  font: 600 18px var(--ui);
+  cursor: text;
 }
 
-.name-input:focus {
+.entry:focus-within {
   border-color: var(--ember);
-  outline: none;
 }
 
-.options {
-  margin: 6px 0 0;
-  padding: 4px;
-  list-style: none;
-  border-radius: 10px;
-  background: var(--umber);
-  max-height: 40vh;
-  overflow-y: auto;
+.entry-word {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
 }
 
-.options li {
-  padding: 9px 10px;
-  border-radius: 7px;
-  cursor: pointer;
+.cell {
+  display: grid;
+  place-items: center;
+  width: var(--cell);
+  height: calc(var(--cell) * 1.25);
+  border-bottom: 2px solid var(--dust);
   font-family: var(--display);
-  font-weight: 700;
-  font-size: 17px;
+  font-weight: 800;
+  font-size: calc(var(--cell) * 0.66);
+  line-height: 1;
 }
 
-.options li:hover,
-.options li.active {
-  background: var(--bark-hi);
+.cell.fixed {
+  border-bottom-color: transparent;
+  color: var(--dust);
+}
+
+.cell.filled {
+  border-bottom-color: var(--parchment);
+}
+
+.entry:focus-within .cell.next {
+  border-bottom-color: var(--ember);
+  background: color-mix(in srgb, var(--ember) 14%, transparent);
+}
+
+.cell-punct {
+  display: grid;
+  place-items: center;
+  height: calc(var(--cell) * 1.25);
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: calc(var(--cell) * 0.66);
+  color: var(--dust);
+}
+
+/* The real input sits invisibly over the blanks, so tapping them opens the phone keyboard. */
+.entry-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  opacity: 0;
+  border: 0;
+  font-size: 16px;
+  caret-color: transparent;
+  cursor: text;
 }
 
 .dialog-actions {

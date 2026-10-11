@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { normalizeName, type Card } from './game/card'
+import type { Card } from './game/card'
 import { buildView, guessedKeys, triesLeft } from './game/cardGame'
 import {
   POOLS,
@@ -23,7 +23,7 @@ import { EndOfCard } from './ui/EndOfCard'
 import { GuessBar } from './ui/GuessBar'
 import { Keyboard } from './ui/Keyboard'
 import { settingsLabel } from './ui/labels'
-import { NameGuess, type NameIndex } from './ui/NameGuess'
+import { NameGuess } from './ui/NameGuess'
 import { StartScreen } from './ui/StartScreen'
 
 const KEYS = { settings: 'spellify-endless:settings', bests: 'spellify-endless:bests', run: 'spellify-endless:run' }
@@ -42,11 +42,6 @@ function loadSettings(): Settings {
 function loadRun(): Run | null {
   const r = load<unknown>(KEYS.run, null)
   return isRun(r) ? r : null
-}
-
-function nameIndex(cards: Card[]): NameIndex {
-  const names = [...new Set(cards.map((c) => c.n))].sort((a, b) => a.localeCompare(b))
-  return names.map((name) => ({ name, norm: normalizeName(name) }))
 }
 
 export default function App() {
@@ -86,7 +81,6 @@ export default function App() {
   const cards = run ? (run.settings.pool === 'all' ? allCards : top) : null
   const card = run && cards ? currentCard(run, cards) : null
   const view = useMemo(() => (card ? buildView(card) : null), [card])
-  const names = useMemo(() => (cards ? nameIndex(cards) : []), [cards])
 
   // A saved "Any card" run needs the full list before it can show its card.
   useEffect(() => {
@@ -222,7 +216,8 @@ export default function App() {
 
       {naming && !over && (
         <NameGuess
-          index={names}
+          tokens={view.name}
+          guessed={guessed}
           tries={triesLeft(run.game)}
           onClose={() => setNaming(false)}
           onGuess={(name) => {
