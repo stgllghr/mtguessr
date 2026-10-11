@@ -2,7 +2,7 @@
 // on the card show faintly behind their boxes; nothing is skipped or filled in for you.
 // No suggestions, so the dialog gives away nothing the card doesn't already show.
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type SyntheticEvent } from 'react'
-import { composeName, entryKeys, slotCount } from '../game/nameEntry'
+import { composeName, entryKeys, isSlot, slotCount } from '../game/nameEntry'
 import { isRevealed, type Token } from '../game/tokens'
 import { Sym } from './Sym'
 
@@ -38,8 +38,8 @@ export function NameGuess({ tokens, guessed, tries, onGuess, onClose }: Props) {
   const words = splitWords(tokens)
   // Size the boxes so the whole name fits on one line, like the card's name bar.
   const all = words.flat()
-  const punct = all.filter((t) => t.kind === 'char' && t.key === null).length
-  const boxes = all.length - punct
+  const boxes = all.filter(isSlot).length
+  const punct = all.length - boxes
   const units = boxes + punct * 0.4 + (words.length - 1) * 0.8
 
   useEffect(() => inputRef.current?.focus(), [])
@@ -58,7 +58,7 @@ export function NameGuess({ tokens, guessed, tries, onGuess, onClose }: Props) {
 
   let box = 0
   const cell = (t: Token, i: number) => {
-    if (t.kind === 'char' && t.key !== null) {
+    if (isSlot(t) && t.kind === 'char') {
       const index = box++
       const ch = typed[index]
       const known = isRevealed(t, guessed)
@@ -70,7 +70,7 @@ export function NameGuess({ tokens, guessed, tries, onGuess, onClose }: Props) {
         </span>
       )
     }
-    if (t.kind === 'char' && t.key === null) {
+    if (t.kind === 'char') {
       return (
         <span key={i} className="cell-punct">
           {t.ch}
@@ -79,7 +79,7 @@ export function NameGuess({ tokens, guessed, tries, onGuess, onClose }: Props) {
     }
     return (
       <span key={i} className="cell fixed">
-        {t.kind === 'char' ? t.ch.toUpperCase() : t.kind === 'sym' ? <Sym sym={t.sym} /> : null}
+        {t.kind === 'sym' ? <Sym sym={t.sym} /> : null}
       </span>
     )
   }

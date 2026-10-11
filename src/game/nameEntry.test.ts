@@ -8,9 +8,12 @@ const elves = tokenize('Llanowar Elves')
 const atraxa = tokenize("Atraxa, Praetors' Voice")
 
 describe('slotCount', () => {
-  it('has a box for every letter of the name, revealed or not', () => {
+  it('has a box for every letter and number of the name, revealed or not', () => {
     expect(slotCount(elves)).toBe(13)
     expect(slotCount(atraxa)).toBe(19)
+  })
+  it('gives punctuation, hyphens included, no box', () => {
+    expect(slotCount(tokenize('Witch-Blessed Meadow'))).toBe(18)
   })
 })
 
@@ -19,8 +22,8 @@ describe('entryKeys', () => {
     expect(entryKeys("elspeth, sun's champion", 99)).toBe('ELSPETHSUNSCHAMPION')
     expect(entryKeys('Eee', 99)).toBe('EEE')
   })
-  it('keeps hyphens and digits, folds accents, and drops spaces and punctuation', () => {
-    expect(entryKeys("Lim-Dûl's 2", 99)).toBe('LIM-DULS2')
+  it('keeps letters and numbers, folds accents, and ignores spaces and punctuation', () => {
+    expect(entryKeys("Lim-Dûl's 2 +*", 99)).toBe('LIMDULS2')
   })
   it('stops once every box is full', () => {
     expect(entryKeys('abcdef', 3)).toBe('ABC')
@@ -34,6 +37,9 @@ describe('composeName', () => {
   })
   it('leaves unfilled boxes empty', () => {
     expect(composeName(elves, 'LL')).toBe('LL ')
+  })
+  it('keeps the name’s own hyphens', () => {
+    expect(composeName(tokenize('Witch-Blessed Meadow'), 'WITCHBLESSEDMEADOW')).toBe('WITCH-BLESSED MEADOW')
   })
   it('makes a winning guess when the whole name is typed', () => {
     const card: Card = { n: "Elspeth, Sun's Champion", m: '{4}{W}{W}', t: 'Legendary Planeswalker — Elspeth', o: '', c: 'W', id: 'e' }

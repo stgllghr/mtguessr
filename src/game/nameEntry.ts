@@ -1,18 +1,22 @@
-// Name guesses are typed into the card name's boxes: one box per letter, revealed or not.
-// The whole name is typed every time; spaces and punctuation come from the name itself.
+// Name guesses are typed into the card name's boxes: one box per letter or number, revealed
+// or not. The whole name is typed every time; spaces and punctuation (hyphens included) come
+// from the name itself, and typed punctuation is ignored.
 import { charKey, type Token } from './tokens'
 
-const isSlot = (t: Token) => t.kind === 'char' && t.key !== null
+const isLetterOrNumber = (key: string | null): key is string => key !== null && /^[A-Z0-9]$/.test(key)
+
+/** Whether a name character gets a box to type into. */
+export const isSlot = (t: Token) => t.kind === 'char' && isLetterOrNumber(t.key)
 
 export function slotCount(tokens: Token[]): number {
   return tokens.filter(isSlot).length
 }
 
-/** The typed characters that fill boxes (as their guess keys), up to `max`. */
+/** The typed letters and numbers that fill boxes (as their guess keys), up to `max`. */
 export function entryKeys(raw: string, max: number): string {
   return [...raw]
     .map(charKey)
-    .filter((k): k is string => k !== null)
+    .filter(isLetterOrNumber)
     .join('')
     .slice(0, max)
 }
