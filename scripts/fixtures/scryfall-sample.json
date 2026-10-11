@@ -1,0 +1,270 @@
+{
+ "alchemy": {
+  "id": "6b7baaa7-67f2-4902-a4c1-761d58cce1d4",
+  "name": "Mine Security",
+  "layout": "normal",
+  "set_type": "alchemy",
+  "games": [
+   "arena"
+  ],
+  "digital": true,
+  "legalities": {
+   "commander": "not_legal"
+  },
+  "colors": [
+   "R"
+  ],
+  "mana_cost": "{1}{R}",
+  "type_line": "Creature — Kavu Soldier",
+  "oracle_text": "Trample\nWhen this creature enters, conjure a card named Flametongue Kavu into the top eight cards of your library at random. It perpetually gains \"You may pay {0} rather than pay this spell's mana cost.\"",
+  "artist": "Xavier Ribeiro",
+  "power": "3",
+  "toughness": "1"
+ },
+ "Palinchron": {
+  "id": "ef772879-44aa-428d-8c12-50d38f8bac80",
+  "name": "Palinchron",
+  "layout": "normal",
+  "set_type": "masters",
+  "games": [
+   "mtgo"
+  ],
+  "digital": true,
+  "edhrec_rank": 7704,
+  "legalities": {
+   "commander": "legal"
+  },
+  "colors": [
+   "U"
+  ],
+  "mana_cost": "{5}{U}{U}",
+  "type_line": "Creature — Illusion",
+  "oracle_text": "Flying\nWhen this creature enters, untap up to seven lands.\n{2}{U}{U}: Return this creature to its owner's hand.",
+  "artist": "Matthew D. Wilson",
+  "power": "4",
+  "toughness": "5"
+ },
+ "funny": {
+  "id": "bea12617-ebaa-45f6-a2e8-b71190708129",
+  "name": "Phyrexian Broodstar",
+  "layout": "normal",
+  "set_type": "funny",
+  "games": [
+   "paper"
+  ],
+  "digital": false,
+  "legalities": {
+   "commander": "not_legal"
+  },
+  "colors": [
+   "U"
+  ],
+  "mana_cost": "{6}{U}{U}",
+  "type_line": "Creature — Phyrexian Beast",
+  "oracle_text": "Affinity for Phyrexians (This spell costs {1} less to cast for each Phyrexian you control.)\nFlying\nPhyrexian Broodstar's power and toughness are each equal to the number of Phyrexians you control.",
+  "artist": "",
+  "power": "*",
+  "toughness": "*"
+ },
+ "token": {
+  "id": "21afb029-9aef-4e6e-a646-3343605b4bb7",
+  "name": "Tyranid",
+  "layout": "token",
+  "set_type": "token",
+  "games": [
+   "paper"
+  ],
+  "digital": false,
+  "legalities": {
+   "commander": "not_legal"
+  },
+  "colors": [
+   "G"
+  ],
+  "mana_cost": "",
+  "type_line": "Token Creature — Tyranid",
+  "oracle_text": "",
+  "artist": "Antonio José Manzanedo",
+  "power": "5",
+  "toughness": "5"
+ },
+ "Llanowar Elves": {
+  "id": "6a0b230b-d391-4998-a3f7-7b158a0ec2cd",
+  "name": "Llanowar Elves",
+  "layout": "normal",
+  "set_type": "core",
+  "games": [
+   "paper",
+   "arena",
+   "mtgo"
+  ],
+  "digital": false,
+  "edhrec_rank": 58,
+  "legalities": {
+   "commander": "legal"
+  },
+  "colors": [
+   "G"
+  ],
+  "mana_cost": "{G}",
+  "type_line": "Creature — Elf Druid",
+  "oracle_text": "{T}: Add {G}.",
+  "flavor_text": "The elves of the Llanowar forest have defended it for generations. It is their sacred duty to keep outside influences from corrupting their ancestral home.",
+  "artist": "Kev Walker",
+  "power": "1",
+  "toughness": "1"
+ },
+ "Atraxa, Praetors' Voice": {
+  "id": "d0d33d52-3d28-4635-b985-51e126289259",
+  "name": "Atraxa, Praetors' Voice",
+  "layout": "normal",
+  "set_type": "masters",
+  "games": [
+   "paper",
+   "mtgo"
+  ],
+  "digital": false,
+  "edhrec_rank": 2383,
+  "legalities": {
+   "commander": "legal"
+  },
+  "colors": [
+   "B",
+   "G",
+   "U",
+   "W"
+  ],
+  "mana_cost": "{G}{W}{U}{B}",
+  "type_line": "Legendary Creature — Phyrexian Angel Horror",
+  "oracle_text": "Flying, vigilance, deathtouch, lifelink\nAt the beginning of your end step, proliferate. (Choose any number of permanents and/or players, then give each another counter of each kind already there.)",
+  "artist": "Victor Adame Minguez",
+  "power": "4",
+  "toughness": "4"
+ },
+ "Jace, the Mind Sculptor": {
+  "id": "c8817585-0d32-4d56-9142-0d29512e86a9",
+  "name": "Jace, the Mind Sculptor",
+  "layout": "normal",
+  "set_type": "masters",
+  "games": [
+   "paper",
+   "mtgo"
+  ],
+  "digital": false,
+  "edhrec_rank": 3334,
+  "legalities": {
+   "commander": "legal"
+  },
+  "colors": [
+   "U"
+  ],
+  "mana_cost": "{2}{U}{U}",
+  "type_line": "Legendary Planeswalker — Jace",
+  "oracle_text": "+2: Look at the top card of target player's library. You may put that card on the bottom of that player's library.\n0: Draw three cards, then put two cards from your hand on top of your library in any order.\n−1: Return target creature to its owner's hand.\n−12: Exile all cards from target player's library, then that player shuffles their hand into their library.",
+  "artist": "Jason Chan",
+  "loyalty": "3"
+ },
+ "Fire // Ice": {
+  "id": "18303862-4726-4136-814f-157aa7006579",
+  "name": "Fire // Ice",
+  "layout": "split",
+  "set_type": "masters",
+  "games": [
+   "paper",
+   "mtgo"
+  ],
+  "digital": false,
+  "edhrec_rank": 13172,
+  "legalities": {
+   "commander": "legal"
+  },
+  "colors": [
+   "R",
+   "U"
+  ],
+  "mana_cost": "{1}{R} // {1}{U}",
+  "type_line": "Instant // Instant",
+  "artist": "David Martin & Franz Vohwinkel",
+  "card_faces": [
+   {
+    "name": "Fire",
+    "mana_cost": "{1}{R}",
+    "type_line": "Instant",
+    "oracle_text": "Fire deals 2 damage divided as you choose among one or two targets.",
+    "artist": "David Martin"
+   },
+   {
+    "name": "Ice",
+    "mana_cost": "{1}{U}",
+    "type_line": "Instant",
+    "oracle_text": "Tap target permanent.\nDraw a card.",
+    "artist": "Franz Vohwinkel"
+   }
+  ]
+ },
+ "Forest": {
+  "id": "2e781bfd-f8cb-4d20-b977-4359f3a21311",
+  "name": "Forest",
+  "layout": "normal",
+  "set_type": "expansion",
+  "games": [
+   "paper",
+   "mtgo",
+   "arena"
+  ],
+  "digital": false,
+  "legalities": {
+   "commander": "legal"
+  },
+  "colors": [],
+  "mana_cost": "",
+  "type_line": "Basic Land — Forest",
+  "oracle_text": "({T}: Add {G}.)",
+  "flavor_text": "\"You have only one mission, minions: protect me with your lives. In order to do this, you need to wear down Captain Britain's psyche. In order to do *that*, you need to burn down her precious lands. Am I understood?\"\n—Morgan Le Fay",
+  "artist": "Samuele Bandini"
+ },
+ "Delver of Secrets // Insectile Aberration": {
+  "id": "6904ea20-e504-47da-95a0-08739fdde260",
+  "name": "Delver of Secrets // Insectile Aberration",
+  "layout": "transform",
+  "set_type": "masters",
+  "games": [
+   "paper",
+   "mtgo"
+  ],
+  "digital": false,
+  "edhrec_rank": 16210,
+  "legalities": {
+   "commander": "legal"
+  },
+  "type_line": "Creature — Human Wizard // Creature — Human Insect",
+  "artist": "Nils Hamm",
+  "card_faces": [
+   {
+    "name": "Delver of Secrets",
+    "mana_cost": "{U}",
+    "type_line": "Creature — Human Wizard",
+    "oracle_text": "At the beginning of your upkeep, look at the top card of your library. You may reveal that card. If an instant or sorcery card is revealed this way, transform this creature.",
+    "artist": "Nils Hamm",
+    "power": "1",
+    "toughness": "1",
+    "colors": [
+     "U"
+    ]
+   },
+   {
+    "name": "Insectile Aberration",
+    "mana_cost": "",
+    "type_line": "Creature — Human Insect",
+    "oracle_text": "Flying",
+    "flavor_text": "\"Unfortunately, all my test animals have died or escaped, so I shall be the final subject. I feel no fear. This is a momentous night.\"\n—Laboratory notes, final entry",
+    "artist": "Nils Hamm",
+    "power": "3",
+    "toughness": "2",
+    "colors": [
+     "U"
+    ]
+   }
+  ]
+ }
+}

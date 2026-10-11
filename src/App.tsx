@@ -1,0 +1,245 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { normalizeName, type Card } from './game/card'
+import { buildView, guessedKeys, triesLeft } from './game/cardGame'
+import {
+  POOLS,
+  applyGuess,
+  bestKey,
+  currentCard,
+  isRun,
+  newSeed,
+  nextCard,
+  recordBest,
+  startRun,
+  type Bests,
+  type Pool,
+  type Run,
+  type Settings,
+} from './game/run'
+import { load, save } from './game/storage'
+import { charKey } from './game/tokens'
+import { CardFace } from './ui/CardFace'
+import { EndOfCard } from './ui/EndOfCard'
+import { GuessBar } from './ui/GuessBar'
+import { Keyboard } from './ui/Keyboard'
+import { settingsLabel } from './ui/labels'
+import { NameGuess, type NameIndex } from './ui/NameGuess'
+import { StartScreen } from './ui/StartScreen'
+
+const KEYS = { settings: 'spellify-endless:settings', bests: 'spellify-endless:bests', run: 'spellify-endless:run' }
+
+async function fetchCards(file: string): Promise<Card[]> {
+  const res = await fetch(`/${file}`)
+  if (!res.ok) throw new Error(`${file}: HTTP ${res.status}`)
+  return res.json()
+}
+
+function loadSettings(): Settings {
+  const s = load<Partial<Settings> | null>(KEYS.settings, null)
+  return s && POOLS.includes(s.pool as Pool) && typeof s.hard === 'boolean' ? (s as Settings) : { pool: 500, hard: false }
+}
+
+function loadRun(): Run | null {
+  const r = load<unknown>(KEYS.run, null)
+  return isRun(r) ? r : null
+}
+
+function nameIndex(cards: Card[]): NameIndex {
+  const names = [...new Set(cards.map((c) => c.n))].sort((a, b) => a.localeCompare(b))
+  return names.map((name) => ({ name, norm: normalizeName(name) }))
+}
+
+export default function App() {
+  const [top, setTop] = useState<Card[] | null>(null)
+  const [rest, setRest] = useState<Card[] | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [settings, setSettings] = useState(loadSettings)
+  const [bests, setBests] = useState<Bests>(() => load(KEYS.bests, {}))
+  const [run, setRun] = useState<Run | null>(loadRun)
+  const [screen, setScreen] = useState<'start' | 'play'>(() => ((loadRun()?.game.status ?? 'lost') !== 'lost' ? 'play' : 'start'))
+  const [naming, setNaming] = useState(false)
+  const restRequest = useRef<Promise<Card[]> | null>(null)
+
+  useEffect(() => {
+    fetchCards('cards-top.json')
+      .then(setTop)
+      .catch(() => setError('The card list did not load. Check your connection, then reload the page.'))
+  }, [])
+
+  const loadRest = useCallback(() => {
+    restRequest.current ??= fetchCards('cards-rest.json').then(
+      (r) => {
+        setRest(r)
+        return r
+      },
+      (e) => {
+        restRequest.current = null
+        setError('The full card list did not load. Check your connection, then reload the page.')
+        throw e
+      },
+    )
+    return restRequest.current
+  }, [])
+
+  const allCards = useMemo(() => (top && rest ? top.concat(rest) : null), [top, rest])
+  const cards = run ? (run.settings.pool === 'all' ? allCards : top) : null
+  const card = run && cards ? currentCard(run, cards) : null
+  const view = useMemo(() => (card ? buildView(card) : null), [card])
+  const names = useMemo(() => (cards ? nameIndex(cards) : []), [cards])
+
+  // A saved "Any card" run needs the full list before it can show its card.
+  useEffect(() => {
+    if (screen === 'play' && run?.settings.pool === 'all' && !rest) loadRest().catch(() => {})
+  }, [screen, run?.settings.pool, rest, loadRest])
+
+  // Card data changed under a saved run (e.g. after refreshing the snapshot): start over.
+  useEffect(() => {
+    if (run && cards && !card) {
+      setRun(null)
+      setScreen('start')
+    }
+  }, [run, cards, card])
+
+  useEffect(() => save(KEYS.settings, settings), [settings])
+  useEffect(() => save(KEYS.run, run), [run])
+  useEffect(() => save(KEYS.bests, bests), [bests])
+  useEffect(() => {
+    if (run) setBests((b) => recordBest(b, run))
+  }, [run])
+
+  const begin = async (s: Settings) => {
+    setSettings(s)
+    if (s.pool === 'all') {
+      setBusy(true)
+      try {
+        await loadRest()
+      } catch {
+        return
+      } finally {
+        setBusy(false)
+      }
+    }
+    setRun(startRun(s, newSeed()))
+    setNaming(false)
+    setScreen('play')
+  }
+
+  const guess = useCallback(
+    (g: { key: string } | { name: string }) => setRun((r) => (r && cards ? applyGuess(r, cards, g) : r)),
+    [cards],
+  )
+  const next = useCallback(() => setRun((r) => (r && cards ? nextCard(r, cards) : r)), [cards])
+  const status = run?.game.status
+
+  // Physical keyboard: type to guess, Enter to name the card / continue.
+  useEffect(() => {
+    if (screen !== 'play' || naming || !run) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey || e.target instanceof HTMLInputElement) return
+      if (e.key === 'Enter') {
+        if (document.activeElement instanceof HTMLButtonElement || document.activeElement instanceof HTMLAnchorElement) return
+        e.preventDefault()
+        if (status === 'playing') setNaming(true)
+        else if (status === 'won') next()
+        else begin(run.settings)
+        return
+      }
+      if (status !== 'playing' || e.key.length !== 1) return
+      const key = charKey(e.key)
+      if (key) {
+        e.preventDefault()
+        guess({ key })
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
+
+  if (error) return <Message title="Something went wrong" body={error} />
+  if (!top) return <Message title="Shuffling the deck…" />
+
+  if (screen === 'start' || !run) {
+    return (
+      <StartScreen
+        settings={settings}
+        onSettings={setSettings}
+        bests={bests}
+        saved={run && run.game.status !== 'lost' ? run : null}
+        allCount={allCards?.length ?? null}
+        busy={busy}
+        onPlay={() => begin(settings)}
+        onResume={() => setScreen('play')}
+      />
+    )
+  }
+
+  if (!card || !view) return <Message title="Loading every card…" />
+
+  const guessed = guessedKeys(run.game)
+  const results = new Map(run.game.guesses.flatMap((g) => (g.type === 'key' ? [[g.key, g.hit] as const] : [])))
+  const last = run.game.guesses.at(-1)
+  const fresh = last?.type === 'key' && last.hit ? last.key : null
+  const over = run.game.status !== 'playing'
+
+  return (
+    <div className="play">
+      <header className="topbar">
+        <button type="button" className="wordmark" onClick={() => setScreen('start')} aria-label="Back to the start screen">
+          Spellify <span>Endless</span>
+        </button>
+        <p className="run-meta">
+          <span className="run-mode">{settingsLabel(run.settings)}</span>
+          <span className="run-streak">
+            Streak <strong>{run.streak}</strong>
+          </span>
+          <span className="run-best">
+            Best <strong>{bests[bestKey(run.settings)] ?? 0}</strong>
+          </span>
+        </p>
+      </header>
+
+      <main className="stage">
+        <CardFace key={`${run.seed}:${run.index}`} card={card} view={view} guessed={guessed} fresh={fresh} hard={run.settings.hard} over={over} />
+      </main>
+
+      <footer className="controls">
+        <GuessBar game={run.game} onGuessName={() => setNaming(true)} />
+        {over ? (
+          <EndOfCard
+            card={card}
+            game={run.game}
+            streak={run.streak}
+            best={bests[bestKey(run.settings)] ?? 0}
+            onNext={next}
+            onPlayAgain={() => begin(run.settings)}
+            onMenu={() => setScreen('start')}
+          />
+        ) : (
+          <Keyboard results={results} disabled={over} onKey={(key) => guess({ key })} />
+        )}
+      </footer>
+
+      {naming && !over && (
+        <NameGuess
+          index={names}
+          tries={triesLeft(run.game)}
+          onClose={() => setNaming(false)}
+          onGuess={(name) => {
+            guess({ name })
+            setNaming(false)
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+function Message({ title, body }: { title: string; body?: string }) {
+  return (
+    <main className="message">
+      <h1>{title}</h1>
+      {body && <p>{body}</p>}
+    </main>
+  )
+}
