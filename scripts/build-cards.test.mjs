@@ -51,6 +51,40 @@ describe('toCompact', () => {
   })
 })
 
+describe('toCompact layouts', () => {
+  it('keeps both halves of a split card, each with its own colors', () => {
+    const c = toCompact(sample['Fire // Ice'])
+    expect(c.lay).toBe('split')
+    expect(c.x).toEqual([expect.objectContaining({ n: 'Ice', m: '{1}{U}', t: 'Instant', c: 'U' })])
+  })
+  it('tags aftermath split cards', () => {
+    const c = toCompact(sample.aftermath)
+    expect(c.lay).toBe('aftermath')
+    expect(c.n).toBe('Heaven')
+    expect(c.x[0].n).toBe('Earth')
+  })
+  it('keeps the back face of double-faced cards with its own colors', () => {
+    const delver = toCompact(sample['Delver of Secrets // Insectile Aberration'])
+    expect(delver.lay).toBe('dfc')
+    expect(delver.x[0]).toMatchObject({ n: 'Insectile Aberration', c: 'U', p: '3', th: '2' })
+    const mdfc = toCompact(sample.mdfc)
+    expect(mdfc.lay).toBe('dfc')
+    expect(mdfc.x[0]).toMatchObject({ n: 'Witch-Blessed Meadow', t: 'Land', c: '' })
+  })
+  it('keeps adventure, prepared and flip second halves in the card colors', () => {
+    const adventure = toCompact(sample.adventure)
+    expect(adventure.lay).toBe('adventure')
+    expect(adventure.x[0]).toMatchObject({ n: 'Meager Meal', t: 'Sorcery — Adventure', c: 'B' })
+    expect(toCompact(sample.prepare)).toMatchObject({ lay: 'prepare', x: [expect.objectContaining({ n: 'Have a Bite', c: 'B' })] })
+    expect(toCompact(sample.flip)).toMatchObject({ lay: 'flip', x: [expect.objectContaining({ n: 'Nighteyes the Desecrator', p: '4', th: '2' })] })
+  })
+  it('leaves single-faced cards without a layout tag', () => {
+    const c = toCompact(sample['Llanowar Elves'])
+    expect('lay' in c).toBe(false)
+    expect('x' in c).toBe(false)
+  })
+})
+
 describe('isRealCard', () => {
   it('keeps normal paper cards and MTGO-printed paper cards', () => {
     expect(isRealCard(sample['Llanowar Elves'])).toBe(true)

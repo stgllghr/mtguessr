@@ -27,7 +27,14 @@ const elves: Card = {
   id: '6a0b230b-d391-4998-a3f7-7b158a0ec2cd',
 }
 const jace: Card = { n: 'Jace, the Mind Sculptor', m: '{2}{U}{U}', t: 'Legendary Planeswalker — Jace', o: '+2: Look.', l: '3', c: 'U', id: 'x' }
-const delver: Card = { n: 'Delver of Secrets', full: 'Delver of Secrets // Insectile Aberration', m: '{U}', t: 'Creature — Human Wizard', o: '', c: 'U', id: 'y' }
+const delver: Card = {
+  n: 'Delver of Secrets', full: 'Delver of Secrets // Insectile Aberration', m: '{U}', t: 'Creature — Human Wizard', o: '', c: 'U', id: 'y', lay: 'dfc',
+  x: [{ n: 'Insectile Aberration', m: '', t: 'Creature — Human Insect', o: 'Flying', p: '3', th: '2', c: 'U' }],
+}
+const fireIce: Card = {
+  n: 'Fire', full: 'Fire // Ice', m: '{1}{R}', t: 'Instant', o: 'Fire deals 2 damage.', c: 'R', id: 'z', lay: 'split',
+  x: [{ n: 'Ice', m: '{1}{U}', t: 'Instant', o: 'Tap target permanent.', c: 'U' }],
+}
 
 const shown = (tokens: Token[], game: CardGame) =>
   tokens.map((t) => (t.kind === 'nl' ? '\n' : !isRevealed(t, guessedKeys(game)) ? '_' : t.kind === 'char' ? t.ch : t.sym)).join('')
@@ -39,22 +46,22 @@ const play = (card: Card, keys: string[]) => {
 
 describe('buildView', () => {
   it('hides every letter of the whole type line but keeps the dash', () => {
-    const v = buildView(elves)
+    const v = buildView(elves).faces[0]
     expect(shown(v.types, newCardGame())).toBe('________ — ___ _____')
   })
   it('hides flavor text and artist', () => {
-    const v = buildView(elves)
+    const v = buildView(elves).faces[0]
     expect(shown(v.flavor, newCardGame())).toBe('___ ____ ______.')
     expect(shown(v.artist, newCardGame())).toBe('___ ______')
   })
   it('builds P/T with a visible slash, loyalty for planeswalkers, none otherwise', () => {
-    expect(shown(buildView(elves).stats!, newCardGame())).toBe('_/_')
-    expect(shown(buildView(jace).stats!, newCardGame())).toBe('_')
-    expect(buildView(delver).stats).toBeNull()
+    expect(shown(buildView(elves).faces[0].stats!, newCardGame())).toBe('_/_')
+    expect(shown(buildView(jace).faces[0].stats!, newCardGame())).toBe('_')
+    expect(buildView(delver).faces[0].stats).toBeNull()
   })
   it('handles cards without flavor or artist', () => {
-    expect(buildView(jace).flavor).toEqual([])
-    expect(buildView(jace).artist).toEqual([])
+    expect(buildView(jace).faces[0].flavor).toEqual([])
+    expect(buildView(jace).faces[0].artist).toEqual([])
   })
 })
 
@@ -62,7 +69,7 @@ describe('guessKey', () => {
   it('reveals matching characters everywhere and records a hit', () => {
     const g = play(elves, ['E'])
     expect(g.guesses).toEqual([{ type: 'key', key: 'E', hit: true }])
-    const v = buildView(elves)
+    const v = buildView(elves).faces[0]
     expect(shown(v.name, g)).toBe('________ E__e_')
     expect(shown(v.types, g)).toBe('__e____e — E__ _____')
     expect(shown(v.artist, g)).toBe('_e_ ____e_')
@@ -75,7 +82,7 @@ describe('guessKey', () => {
   it('reveals mana symbols with symbol keys', () => {
     const g = play(elves, ['{G}'])
     expect(g.guesses[0].hit).toBe(true)
-    expect(shown(buildView(elves).cost, g)).toBe('{G}')
+    expect(shown(buildView(elves).faces[0].cost, g)).toBe('{G}')
   })
   it('ignores a key that was already guessed', () => {
     const g = play(elves, ['E', 'E'])
@@ -99,9 +106,12 @@ describe('guessName', () => {
     expect(guessName(elves, newCardGame(), 'llanowar elves').status).toBe('won')
     expect(guessName(jace, newCardGame(), 'Jace the Mind Sculptor').status).toBe('won')
   })
-  it('accepts the front face or full name of a multi-face card', () => {
+  it('only accepts the main name: the front face, or both halves of a split card', () => {
     expect(guessName(delver, newCardGame(), 'Delver of Secrets').status).toBe('won')
-    expect(guessName(delver, newCardGame(), 'Delver of Secrets // Insectile Aberration').status).toBe('won')
+    expect(guessName(delver, newCardGame(), 'Insectile Aberration').status).toBe('playing')
+    expect(guessName(delver, newCardGame(), 'Delver of Secrets // Insectile Aberration').status).toBe('playing')
+    expect(guessName(fireIce, newCardGame(), 'Fire // Ice').status).toBe('won')
+    expect(guessName(fireIce, newCardGame(), 'Fire').status).toBe('playing')
   })
   it('charges a try for a wrong name', () => {
     const g = guessName(elves, newCardGame(), 'Elvish Mystic')
@@ -117,6 +127,56 @@ describe('guessName', () => {
   it('loses when the last try is a wrong name', () => {
     const g = play(elves, ['Q', 'Z', 'J', 'K', 'X', 'Y', 'U', 'B', 'C', 'D', 'F', 'G'])
     expect(guessName(elves, g, 'Elvish Mystic').status).toBe('lost')
+  })
+})
+
+describe('multi-face cards', () => {
+  it('has a view for every face', () => {
+    const v = buildView(delver)
+    expect(v.layout).toBe('dfc')
+    expect(v.faces.map((f) => shown(f.name, newCardGame()))).toEqual(['______ __ _______', '_________ __________'])
+    expect(buildView(elves).layout).toBe('normal')
+  })
+  it('shares guesses across faces: a letter only on the back still hits', () => {
+    const g = play(delver, ['B'])
+    expect(g.guesses[0].hit).toBe(true)
+    expect(shown(buildView(delver).faces[1].name, g)).toBe('_________ _b________')
+  })
+  it('uses both halves of a split card as the answer', () => {
+    expect(shown(buildView(fireIce).answer, newCardGame())).toBe('____ // ___')
+    expect(play(fireIce, ['F', 'I', 'R', 'E', 'C']).status).toBe('won')
+    expect(play(fireIce, ['F', 'I', 'R', 'E']).status).toBe('playing')
+  })
+  it('wins a double-faced card by revealing the front name only', () => {
+    expect(play(delver, ['D', 'E', 'L', 'V', 'R', 'O', 'F', 'S', 'C', 'T']).status).toBe('won')
+  })
+})
+
+describe('sections', () => {
+  const kinds = (card: Card) => buildView(card).faces[0].sections.map((s) => s.kind)
+  it('splits planeswalker loyalty abilities from static text', () => {
+    const lili: Card = { n: 'Liliana', m: '{1}{B}{B}', t: 'Legendary Planeswalker — Liliana', o: 'Static line.\n+1: Each player discards a card.\n−2: Sacrifice.\n0: Nothing.\n−X: Big.', l: '3', c: 'B', id: 'l' }
+    expect(kinds(lili)).toEqual(['plain', 'loyalty', 'loyalty', 'loyalty', 'loyalty'])
+    const s = buildView(lili).faces[0].sections[2]
+    expect(shown(s.badge!, newCardGame())).toBe('__')
+    expect(shown(s.tokens, newCardGame())).toBe('_________.')
+    expect(buildView(lili).faces[0].kind).toBe('planeswalker')
+  })
+  it('splits saga chapters with their numerals', () => {
+    const saga: Card = { n: 'The Eldest Reborn', m: '{4}{B}', t: 'Enchantment — Saga', o: '(Reminder.)\nI — One.\nII, III — Two.', c: 'B', id: 's' }
+    expect(kinds(saga)).toEqual(['plain', 'chapter', 'chapter'])
+    expect(shown(buildView(saga).faces[0].sections[2].badge!, newCardGame())).toBe('__, ___')
+    expect(buildView(saga).faces[0].kind).toBe('saga')
+  })
+  it('splits class levels into level bars', () => {
+    const cls: Card = { n: 'Druid Class', m: '{1}{G}', t: 'Enchantment — Class', o: '(Reminder.)\nLandfall.\n{2}{G}: Level 2\nExtra land.', c: 'G', id: 'c' }
+    expect(kinds(cls)).toEqual(['plain', 'plain', 'level', 'plain'])
+    const level = buildView(cls).faces[0].sections[2]
+    expect(shown(level.badge!, newCardGame())).toBe('__')
+    expect(shown(level.tokens, newCardGame())).toBe('_____ _')
+  })
+  it('marks battles', () => {
+    expect(buildView({ ...elves, t: 'Battle — Siege', d: '5' }).faces[0].kind).toBe('battle')
   })
 })
 

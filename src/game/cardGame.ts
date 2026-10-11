@@ -1,41 +1,84 @@
-// One card's puzzle: the masked view and the guesses made against it.
-import { normalizeName, type Card } from './card'
+// One card's puzzle: the masked view of every face and the guesses made against it.
+import { answerName, facesOf, normalizeName, type Card, type Face, type Layout } from './card'
 import { isRevealed, keysIn, tokenize, type Token } from './tokens'
 
 export const MAX_TRIES = 13
 
-export type CardView = {
+export type FaceKind = 'standard' | 'planeswalker' | 'saga' | 'class' | 'battle'
+
+/** A block of rules text. Loyalty abilities, saga chapters and class levels carry a badge
+ * (the cost, numerals, or level cost) that is drawn apart from the text. */
+export type Section = { kind: 'plain' | 'loyalty' | 'chapter' | 'level'; badge: Token[] | null; tokens: Token[] }
+
+export type FaceView = {
+  face: Face
+  kind: FaceKind
   name: Token[]
   cost: Token[]
   types: Token[]
-  text: Token[]
+  sections: Section[]
   flavor: Token[]
   stats: Token[] | null
   artist: Token[]
 }
 
+export type CardView = { layout: Layout; faces: FaceView[]; answer: Token[] }
+
 export type Guess = { type: 'key'; key: string; hit: boolean } | { type: 'name'; text: string; hit: boolean }
 export type CardGame = { guesses: Guess[]; status: 'playing' | 'won' | 'lost' }
 
-function statsText(card: Card): string | null {
-  if (card.p !== undefined && card.th !== undefined) return `${card.p}/${card.th}`
-  return card.l ?? card.d ?? null
+function kindOf(face: Face): FaceKind {
+  if (/\bPlaneswalker\b/.test(face.t)) return 'planeswalker'
+  if (/\bSaga\b/.test(face.t)) return 'saga'
+  if (/\bClass\b/.test(face.t)) return 'class'
+  if (/\bBattle\b/.test(face.t)) return 'battle'
+  return 'standard'
 }
 
-export function buildView(card: Card): CardView {
-  const stats = statsText(card)
+const LOYALTY = /^([+−-]?(?:\d+|X)): (.+)$/s
+const CHAPTER = /^([IVX]+(?:, [IVX]+)*) — (.+)$/s
+const LEVEL = /^((?:\{[^}]+\})+): (Level \d+)$/
+
+function sectionsOf(text: string, kind: FaceKind): Section[] {
+  if (!text) return []
+  return text.split('\n').map((line): Section => {
+    const pattern = kind === 'planeswalker' ? LOYALTY : kind === 'saga' ? CHAPTER : kind === 'class' ? LEVEL : null
+    const m = pattern?.exec(line)
+    if (!m) return { kind: 'plain', badge: null, tokens: tokenize(line) }
+    const sectionKind = kind === 'planeswalker' ? 'loyalty' : kind === 'saga' ? 'chapter' : 'level'
+    return { kind: sectionKind, badge: tokenize(m[1]), tokens: tokenize(m[2]) }
+  })
+}
+
+function statsText(face: Face): string | null {
+  if (face.p !== undefined && face.th !== undefined) return `${face.p}/${face.th}`
+  return face.l ?? face.d ?? null
+}
+
+function buildFace(face: Face): FaceView {
+  const kind = kindOf(face)
+  const stats = statsText(face)
   return {
-    name: tokenize(card.n),
-    cost: tokenize(card.m),
-    types: tokenize(card.t),
-    text: tokenize(card.o),
-    flavor: tokenize(card.f ?? ''),
+    face,
+    kind,
+    name: tokenize(face.n),
+    cost: tokenize(face.m),
+    types: tokenize(face.t),
+    sections: sectionsOf(face.o, kind),
+    flavor: tokenize(face.f ?? ''),
     stats: stats === null ? null : tokenize(stats),
-    artist: tokenize(card.a ?? ''),
+    artist: tokenize(face.a ?? ''),
   }
 }
 
-const allTokens = (v: CardView) => [...v.name, ...v.cost, ...v.types, ...v.text, ...v.flavor, ...(v.stats ?? []), ...v.artist]
+export function buildView(card: Card): CardView {
+  return { layout: card.lay ?? 'normal', faces: facesOf(card).map(buildFace), answer: tokenize(answerName(card)) }
+}
+
+export function faceTokens(f: FaceView): Token[] {
+  const sections = f.sections.flatMap((s) => [...(s.badge ?? []), ...s.tokens])
+  return [...f.name, ...f.cost, ...f.types, ...sections, ...f.flavor, ...(f.stats ?? []), ...f.artist]
+}
 
 export const newCardGame = (): CardGame => ({ guesses: [], status: 'playing' })
 
@@ -52,16 +95,16 @@ function settle(game: CardGame, won: boolean): CardGame {
 
 export function guessKey(view: CardView, game: CardGame, key: string): CardGame {
   if (game.status !== 'playing' || guessedKeys(game).has(key)) return game
-  const hit = keysIn(allTokens(view)).has(key)
+  const hit = keysIn(view.faces.flatMap(faceTokens)).has(key)
   const next: CardGame = { ...game, guesses: [...game.guesses, { type: 'key', key, hit }] }
   const guessed = guessedKeys(next)
-  return settle(next, view.name.every((t) => isRevealed(t, guessed)))
+  return settle(next, view.answer.every((t) => isRevealed(t, guessed)))
 }
 
 export function guessName(card: Card, game: CardGame, text: string): CardGame {
   const answer = normalizeName(text)
   if (game.status !== 'playing' || !answer) return game
-  const hit = answer === normalizeName(card.n) || (card.full !== undefined && answer === normalizeName(card.full))
+  const hit = answer === normalizeName(answerName(card))
   const next: CardGame = { ...game, guesses: [...game.guesses, { type: 'name', text: text.trim(), hit }] }
   return settle(next, hit)
 }

@@ -34,33 +34,52 @@ export function isTopEligible(raw) {
   return raw.legalities?.commander === 'legal' && typeof raw.edhrec_rank === 'number'
 }
 
-function frontColors(raw) {
-  const f = front(raw)
-  let colors = f.colors
-  if (!colors && raw.layout === 'split') colors = WUBRG.filter((c) => (f.mana_cost ?? '').includes(c))
-  colors ??= raw.colors ?? []
-  return WUBRG.filter((c) => colors.includes(c)).join('')
+const LAYOUTS = { split: 'split', adventure: 'adventure', prepare: 'prepare', transform: 'dfc', modal_dfc: 'dfc', flip: 'flip' }
+
+function layoutOf(raw) {
+  if (raw.layout === 'split' && raw.keywords?.includes('Aftermath')) return 'aftermath'
+  return LAYOUTS[raw.layout]
+}
+
+const orderColors = (colors) => WUBRG.filter((c) => colors.includes(c)).join('')
+const costColors = (cost) => WUBRG.filter((c) => (cost ?? '').includes(c))
+
+/** Frame colors for one face: split halves are colored by their own cost, double-faced
+ * faces by their own colors, and everything else (adventure, prepared, flip) by the card. */
+function faceColors(raw, face, layout) {
+  if (layout === 'split' || layout === 'aftermath') return orderColors(costColors(face.mana_cost))
+  return orderColors(face.colors ?? raw.colors ?? [])
+}
+
+function compactFace(raw, face, layout) {
+  const out = {
+    n: face.name,
+    m: face.mana_cost ?? '',
+    t: face.type_line ?? raw.type_line ?? '',
+    o: face.oracle_text ?? '',
+    f: face.flavor_text,
+    a: face.artist ?? raw.artist,
+    p: face.power,
+    th: face.toughness,
+    l: face.loyalty,
+    d: face.defense,
+    c: faceColors(raw, face, layout),
+  }
+  for (const k of Object.keys(out)) if (out[k] === undefined || (out[k] === '' && !['m', 'o', 'c'].includes(k))) delete out[k]
+  return out
 }
 
 export function toCompact(raw) {
-  const f = front(raw)
-  const card = {
-    n: f.name,
-    full: f.name !== raw.name ? raw.name : undefined,
-    m: f.mana_cost ?? '',
-    t: f.type_line ?? raw.type_line ?? '',
-    o: f.oracle_text ?? '',
-    f: f.flavor_text,
-    a: f.artist ?? raw.artist,
-    p: f.power,
-    th: f.toughness,
-    l: f.loyalty,
-    d: f.defense,
-    c: frontColors(raw),
-    r: raw.edhrec_rank,
-    id: raw.id,
+  const layout = layoutOf(raw)
+  const faces = raw.card_faces ?? [raw]
+  const card = { ...compactFace(raw, faces[0], layout) }
+  if (faces[0].name !== raw.name) card.full = raw.name
+  if (raw.edhrec_rank !== undefined) card.r = raw.edhrec_rank
+  card.id = raw.id
+  if (layout && faces.length > 1) {
+    card.lay = layout
+    card.x = faces.slice(1).map((f) => compactFace(raw, f, layout))
   }
-  for (const k of Object.keys(card)) if (card[k] === undefined || (card[k] === '' && !['m', 'o', 'c'].includes(k))) delete card[k]
   return card
 }
 

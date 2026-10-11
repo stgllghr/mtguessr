@@ -86,3 +86,31 @@ Scryfall id (image URL is derived from it).
 ## Out of scope
 
 Accounts, daily puzzle, sharing results, a server/API.
+
+## Card layouts (added 2026-10-11)
+
+Every face is kept; guesses are shared across all faces. Blanks sit where the text is
+printed for each layout. The correct answer is the **main name** only: the front face
+(DFCs, flip), the creature (adventure, prepared), or both halves `A // B` (split,
+aftermath). Revealing every letter of the main name also wins.
+
+| Layout | Drawn as |
+|---|---|
+| Planeswalker | Loyalty abilities as rows with a neutral cost badge (sign hidden, so the badge shape never hints + or −); starting loyalty in the bottom-right shield |
+| Saga | Chapter text in a left column with roman-numeral markers; tall art on the right |
+| Class | Tall art on the left; text on the right split by level bars (cost · Level N) |
+| Adventure | Adventure panel (name, cost, type, text) on the left of the text box; creature text on the right |
+| Prepared | Mirror of adventure: creature text left, spell panel right |
+| Split | Two halves printed sideways (rotated −90°), each with its own frame color |
+| Aftermath | Top half upright; bottom half sideways (rotated +90°) |
+| Flip | Top half upright; second half upside down below the art |
+| Battle | Landscape frame printed sideways |
+| Double-faced (transform, MDFC) | Back face has its own blanks and frame color |
+
+Card controls, always visible during play:
+- **Rotate** turns the whole card 90° at a time, blanks and all, like turning a real card.
+- **Check other side** flips the card. Double-faced cards show the back face's blanks;
+  every other card shows a plain card back (our own design, not Wizards' art).
+
+When a card ends, each side's blanks fill in and then dissolve into the real Scryfall
+image (front image; back image for double-faced cards).
