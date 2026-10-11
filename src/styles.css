@@ -911,8 +911,9 @@ a {
 }
 
 .dialog {
+  container-type: inline-size;
   width: 100%;
-  max-width: 460px;
+  max-width: 600px;
   padding: 18px;
   border-radius: 14px;
   background: var(--bark);
@@ -934,12 +935,15 @@ a {
 }
 
 .entry {
-  --cell: min(34px, calc((min(100vw, 460px) - 84px) / var(--chars) - 3px));
+  /* Boxes are sized from the dialog's width so the whole name fits on one line, like the
+     card's name bar. Only names too long for 10px boxes wrap, at word gaps. */
+  --avail: calc(100cqw - 22px);
+  --cell: clamp(10px, calc((var(--avail) - 2px * var(--boxes)) / var(--units)), 28px);
   position: relative;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  column-gap: calc(var(--cell) * 0.9);
+  column-gap: calc(var(--cell) * 0.8);
   row-gap: 10px;
   padding: 16px 10px;
   border-radius: 10px;
@@ -955,18 +959,18 @@ a {
 .entry-word {
   display: flex;
   align-items: flex-end;
-  gap: 3px;
+  gap: 2px;
 }
 
 .cell {
   display: grid;
   place-items: center;
   width: var(--cell);
-  height: calc(var(--cell) * 1.25);
+  height: calc(var(--cell) * 1.6);
   border-bottom: 2px solid var(--dust);
   font-family: var(--display);
   font-weight: 800;
-  font-size: calc(var(--cell) * 0.66);
+  font-size: calc(var(--cell) * 1.1);
   line-height: 1;
 }
 
@@ -987,10 +991,10 @@ a {
 .cell-punct {
   display: grid;
   place-items: center;
-  height: calc(var(--cell) * 1.25);
+  height: calc(var(--cell) * 1.6);
   font-family: var(--display);
   font-weight: 800;
-  font-size: calc(var(--cell) * 0.66);
+  font-size: calc(var(--cell) * 1.1);
   color: var(--dust);
 }
 
@@ -1018,6 +1022,13 @@ a {
 @media (max-width: 420px) {
   .run-mode {
     display: none;
+  }
+  .scrim {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  .dialog {
+    padding: 14px;
   }
   .key {
     height: 44px;

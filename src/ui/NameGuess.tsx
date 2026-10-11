@@ -35,7 +35,11 @@ export function NameGuess({ tokens, guessed, tries, onGuess, onClose }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const complete = typed.length === total
   const words = splitWords(tokens)
-  const longest = Math.max(...words.map((w) => w.length))
+  // Size the boxes so the whole name fits on one line, like the card's name bar.
+  const all = words.flat()
+  const punct = all.filter((t) => t.kind === 'char' && t.key === null).length
+  const boxes = all.length - punct
+  const units = boxes + punct * 0.4 + (words.length - 1) * 0.8
 
   useEffect(() => inputRef.current?.focus(), [])
 
@@ -84,7 +88,7 @@ export function NameGuess({ tokens, guessed, tries, onGuess, onClose }: Props) {
         <p className="dialog-note">
           Fill in the blanks. A guess costs 1 of your {tries} {tries === 1 ? 'try' : 'tries'}.
         </p>
-        <div className="entry" style={{ '--chars': longest } as CSSProperties}>
+        <div className="entry" style={{ '--boxes': boxes, '--units': units } as CSSProperties}>
           {words.map((w, i) => (
             <span key={i} className="entry-word">
               {w.map(cell)}
