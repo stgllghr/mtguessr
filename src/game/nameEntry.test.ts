@@ -17,10 +17,16 @@ describe('hiddenSlots', () => {
 
 describe('sanitizeEntry', () => {
   it('keeps guessable characters as keys and drops the rest', () => {
-    expect(sanitizeEntry("ab-c d,é'*", 99)).toBe('AB-CDE*')
+    expect(sanitizeEntry("ab-c d,é'*", 99, new Set())).toBe('AB-CDE*')
   })
   it('stops at the number of blanks', () => {
-    expect(sanitizeEntry('abcdef', 3)).toBe('ABC')
+    expect(sanitizeEntry('abcdef', 3, new Set())).toBe('ABC')
+  })
+  it('skips letters that are already revealed, so typing the whole name works', () => {
+    const name = tokenize("Elspeth, Sun's Champion")
+    const guessed = new Set(['E', 'S', 'N'])
+    const typed = sanitizeEntry('elspeth suns champion', hiddenSlots(name, guessed), guessed)
+    expect(composeName(name, guessed, typed)).toBe("ELSPETH, SUN'S CHAMPION")
   })
 })
 

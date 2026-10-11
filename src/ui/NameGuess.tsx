@@ -98,7 +98,7 @@ export function NameGuess({ tokens, guessed, tries, onGuess, onClose }: Props) {
             ref={inputRef}
             className="entry-input"
             value={typed}
-            onChange={(e) => setTyped(sanitizeEntry(e.target.value, total))}
+            onChange={(e) => setTyped(sanitizeEntry(e.target.value, total, guessed))}
             onKeyDown={onKeyDown}
             onSelect={caretToEnd}
             autoComplete="off"

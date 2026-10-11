@@ -8,11 +8,15 @@ export function hiddenSlots(tokens: Token[], guessed: ReadonlySet<string>): numb
   return tokens.filter((t) => isBlank(t, guessed)).length
 }
 
-/** Keeps only characters that can fill a blank (as their guess keys), up to `max`. */
-export function sanitizeEntry(raw: string, max: number): string {
+/**
+ * Keeps only characters that can fill a blank (as their guess keys), up to `max`.
+ * Revealed letters are skipped: guessing a key reveals every copy, so a revealed letter
+ * can never belong in a blank. That lets people type the whole name naturally.
+ */
+export function sanitizeEntry(raw: string, max: number, guessed: ReadonlySet<string>): string {
   return [...raw]
     .map(charKey)
-    .filter((k): k is string => k !== null)
+    .filter((k): k is string => k !== null && !guessed.has(k))
     .join('')
     .slice(0, max)
 }
