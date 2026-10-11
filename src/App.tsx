@@ -216,7 +216,7 @@ export default function App() {
 
       {naming && !over && (
         <NameGuess
-          tokens={view.name}
+          tokens={view.answer}
           guessed={guessed}
           tries={triesLeft(run.game)}
           onClose={() => setNaming(false)}

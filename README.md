@@ -8,6 +8,9 @@ miss ends the run.
 - **Card pools:** Top 500 / 2,000 / 10,000 Commander cards by EDHREC rank, or **Any card** from
   the full catalog (about 32,000 cards, picked uniformly at random).
 - **Hard mode:** also hides the frame color.
+- **Real card layouts:** planeswalkers, sagas, classes, adventures, prepared spells, split and
+  aftermath cards, flip cards, battles and double-faced cards put their blanks where the text is
+  printed. Rotate the card or check its other side like a real one.
 - Best streaks are kept per pool and mode. Your run in progress survives a page reload.
 
 ## Play locally

@@ -103,6 +103,10 @@ export function StartScreen({ settings, onSettings, bests, saved, allCount, busy
           <li>Everything printed on the card is hidden. Only the frame color shows, and hard mode hides that too.</li>
           <li>Guess letters, numbers and mana symbols to fill in the blanks across the whole card.</li>
           <li>Every guess costs one of your {MAX_TRIES} tries, including guessing the name.</li>
+          <li>
+            Handle the card like a real one: Rotate it to read split cards and battles, which are printed sideways, and
+            check the other side for double-faced cards, which have blanks on the back too.
+          </li>
           <li>Solve the card to keep your streak going. Run out of tries and the run ends.</li>
           <li>On a keyboard, type to guess and press Enter to name the card.</li>
         </ul>

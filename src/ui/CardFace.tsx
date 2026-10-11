@@ -1,9 +1,13 @@
-// The masked card. When the card is over it flips to the real Scryfall image.
-import { useEffect, useState, type CSSProperties } from 'react'
+// The card in play: masked faces you can rotate and turn over, like a card in your hand.
+// When the card ends, each side's blanks fill in and then develop into the real Scryfall image.
+import { useEffect, useState, type MouseEvent } from 'react'
 import { imageUrl, type Card } from '../game/card'
 import type { CardView } from '../game/cardGame'
-import { TokenText } from './TokenText'
-import { useFit } from './useFit'
+import { Artist, CardBack, FaceFrame, Stats } from './frames'
+import { MaskContext } from './TokenText'
+
+// Card tools shouldn't keep focus, or Enter would press them instead of naming the card.
+const keepFocus = (e: MouseEvent) => e.preventDefault()
 
 type Props = {
   card: Card
@@ -14,85 +18,69 @@ type Props = {
   over: boolean
 }
 
-function frameOf(card: Card, hard: boolean): string {
-  if (hard) return 'hidden'
-  if (card.c.length > 1) return 'gold'
-  if (card.c.length === 1) return card.c.toLowerCase()
-  return /\bLand\b/.test(card.t) ? 'land' : 'artifact'
-}
-
-export function CardFace({ card, view, guessed, fresh, hard, over }: Props) {
-  const [flipped, setFlipped] = useState(false)
-  const [imageFailed, setImageFailed] = useState(false)
-  const version = guessed.size + (over ? 100 : 0)
-  const [nameRef, nameScale] = useFit<HTMLSpanElement>(version, 'x', 0.45)
-  const [typeRef, typeScale] = useFit<HTMLDivElement>(version, 'x', 0.5)
-  const [textRef, textScale] = useFit<HTMLDivElement>(version, 'y', 0.4)
-  const [artistRef, artistScale] = useFit<HTMLDivElement>(version, 'x', 0.6)
+function Side({ card, view, index, hard, over }: { card: Card; view: CardView; index: number; hard: boolean; over: boolean }) {
+  const [developed, setDeveloped] = useState(false)
+  const [failed, setFailed] = useState(false)
+  const face = view.faces[index]
+  const cardStats = face.kind !== 'battle' && !['split', 'aftermath', 'flip'].includes(view.layout)
 
   useEffect(() => {
     if (!over) return
-    const t = setTimeout(() => setFlipped(true), 650)
+    const t = setTimeout(() => setDeveloped(true), 650)
     return () => clearTimeout(t)
   }, [over])
 
-  const canFlip = over && !imageFailed
-  const shared = { guessed, fresh, reveal: over }
-  const name = card.full ?? card.n
+  return (
+    <>
+      <div className={`card face${over ? '' : ' masked'}`}>
+        <div className="face-content">
+          <FaceFrame view={view} index={index} hard={hard} />
+        </div>
+        {cardStats && <Stats face={face} />}
+        <Artist face={face} />
+      </div>
+      {!failed && (
+        <img
+          className={`real${developed ? ' developed' : ''}`}
+          src={imageUrl(card.id, index === 0 ? 'front' : 'back')}
+          alt={developed ? (index === 0 ? card.full ?? card.n : face.face.n) : ''}
+          onError={() => setFailed(true)}
+        />
+      )}
+    </>
+  )
+}
+
+export function CardFace({ card, view, guessed, fresh, hard, over }: Props) {
+  const [turns, setTurns] = useState(0)
+  const [flipped, setFlipped] = useState(false)
+  const twoSided = view.layout === 'dfc' && view.faces.length > 1
+  const sideways = turns % 2 === 1
 
   return (
-    <div className={`card-flip${flipped && canFlip ? ' is-flipped' : ''}`}>
-      <button
-        type="button"
-        className="card-inner"
-        disabled={!canFlip}
-        onClick={() => setFlipped((f) => !f)}
-        aria-label={canFlip ? (flipped ? 'Show the guessing card' : 'Show the real card') : 'Hidden card'}
-      >
-        <div className={`card face frame-${frameOf(card, hard)}${over ? '' : ' masked'}`} aria-hidden={flipped && canFlip}>
-          <div className="frame">
-            <div className="bar name-bar">
-              <span className="name" ref={nameRef} style={{ '--fit': nameScale } as CSSProperties}>
-                <TokenText tokens={view.name} {...shared} />
-              </span>
-              <span className="cost">
-                <TokenText tokens={view.cost} {...shared} />
-              </span>
-            </div>
-            <div className="art" />
-            <div className="bar type-bar" ref={typeRef} style={{ '--fit': typeScale } as CSSProperties}>
-              <TokenText tokens={view.types} {...shared} />
-            </div>
-            <div className="textbox" ref={textRef} style={{ '--fit': textScale } as CSSProperties}>
-              <div className="rules">
-                <TokenText tokens={view.text} paragraphs reminder {...shared} />
+    <MaskContext.Provider value={{ guessed, fresh, reveal: over, version: guessed.size + (over ? 100 : 0) }}>
+      <div className="card-area">
+        <div className={`card-slot${sideways ? ' turned' : ''}`}>
+          <div className="card-flip" style={{ rotate: `${turns * 90}deg` }}>
+            <div className={`card-inner${flipped ? ' is-flipped' : ''}`}>
+              <div className="side side-front" aria-hidden={flipped}>
+                <Side card={card} view={view} index={0} hard={hard} over={over} />
               </div>
-              {view.flavor.length > 0 && (
-                <div className="flavor">
-                  <TokenText tokens={view.flavor} paragraphs {...shared} />
-                </div>
-              )}
+              <div className="side side-back" aria-hidden={!flipped}>
+                {twoSided ? <Side card={card} view={view} index={1} hard={hard} over={over} /> : <CardBack />}
+              </div>
             </div>
           </div>
-          {view.stats && (
-            <div className="stats">
-              <TokenText tokens={view.stats} {...shared} />
-            </div>
-          )}
-          {view.artist.length > 0 && (
-            <div className="artist" ref={artistRef} style={{ '--fit': artistScale } as CSSProperties}>
-              <span className="brush" aria-hidden>
-                ✎
-              </span>{' '}
-              <TokenText tokens={view.artist} {...shared} />
-            </div>
-          )}
         </div>
-        <div className="card back" aria-hidden={!(flipped && canFlip)}>
-          <img src={imageUrl(card.id)} alt={flipped && canFlip ? name : ''} onError={() => setImageFailed(true)} />
+        <div className="card-tools">
+          <button type="button" className="tool" onMouseDown={keepFocus} onClick={() => setTurns((t) => t + 1)}>
+            <span aria-hidden>↻</span> Rotate
+          </button>
+          <button type="button" className="tool" onMouseDown={keepFocus} onClick={() => setFlipped((f) => !f)} aria-pressed={flipped}>
+            <span aria-hidden>⇄</span> {flipped ? 'Back to front' : 'Check other side'}
+          </button>
         </div>
-      </button>
-      {canFlip && <p className="flip-hint">Tap the card to flip it</p>}
-    </div>
+      </div>
+    </MaskContext.Provider>
   )
 }

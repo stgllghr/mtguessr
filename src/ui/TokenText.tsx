@@ -1,13 +1,19 @@
 // Renders tokens with hidden characters as blank slots. Words never break across lines.
-import { Fragment, type CSSProperties, type ReactNode } from 'react'
+import { createContext, Fragment, useContext, type CSSProperties, type ReactNode } from 'react'
 import { isRevealed, type Token } from '../game/tokens'
 import { Sym } from './Sym'
 
-type Props = {
-  tokens: Token[]
+type Mask = {
   guessed: ReadonlySet<string>
   fresh: string | null // the latest guess; its reveals get the ink-in animation
   reveal: boolean // show everything (card is over)
+  version: number // changes whenever what's shown changes, so text can re-fit
+}
+
+export const MaskContext = createContext<Mask>({ guessed: new Set(), fresh: null, reveal: false, version: 0 })
+
+type Props = {
+  tokens: Token[]
   paragraphs?: boolean
   reminder?: boolean // italicize (parenthesized reminder text)
 }
@@ -18,7 +24,8 @@ function split<T>(items: T[], isBreak: (t: T) => boolean): T[][] {
   return out
 }
 
-export function TokenText({ tokens, guessed, fresh, reveal, paragraphs, reminder }: Props) {
+export function TokenText({ tokens, paragraphs, reminder }: Props) {
+  const { guessed, fresh, reveal } = useContext(MaskContext)
   let freshIndex = 0
   let depth = 0
 

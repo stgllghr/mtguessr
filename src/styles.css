@@ -402,30 +402,67 @@ a {
 
 /* ---------- The card ---------- */
 
+.card-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+/* The slot is the card's footprint on the page: portrait, or landscape once turned sideways.
+   The card itself always keeps the same width, so every cqw size inside stays put. */
+.card-slot {
+  --w-upright: clamp(240px, min(100vw - 32px, 420px, calc((100dvh - 380px) * 0.716)), 420px);
+  --w: var(--w-upright);
+  position: relative;
+  width: var(--w);
+  height: calc(var(--w) * 88 / 63);
+  transition:
+    width 400ms ease,
+    height 400ms ease;
+}
+
+.card-slot.turned {
+  --w: min(var(--w-upright), calc((min(100vw, 560px) - 32px) * 63 / 88));
+  width: calc(var(--w) * 88 / 63);
+  height: var(--w);
+}
+
 .card-flip {
-  --card-w: clamp(260px, min(100%, 420px, calc((100dvh - 330px) * 0.716)), 420px);
-  width: var(--card-w);
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--w);
+  translate: -50% -50%;
   container-type: inline-size;
   perspective: 1400px;
+  transition:
+    rotate 450ms cubic-bezier(0.3, 0.7, 0.2, 1),
+    width 400ms ease;
 }
 
 .card-inner {
   position: relative;
-  display: block;
-  width: 100%;
-  padding: 0;
-  border: 0;
-  background: none;
-  text-align: left;
   transform-style: preserve-3d;
   transition: transform 800ms cubic-bezier(0.3, 0.7, 0.2, 1);
 }
 
-.card-inner:not(:disabled) {
-  cursor: pointer;
+.card-inner.is-flipped {
+  transform: rotateY(180deg);
 }
 
-.is-flipped .card-inner {
+.side {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.side-front {
+  position: relative;
+}
+
+.side-back {
+  position: absolute;
+  inset: 0;
   transform: rotateY(180deg);
 }
 
@@ -433,33 +470,97 @@ a {
   position: relative;
   aspect-ratio: 63 / 88;
   border-radius: 4.7% / 3.4%;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.06) inset,
     0 18px 40px -12px rgba(0, 0, 0, 0.7);
 }
 
-.back {
+/* The real card develops over the filled-in blanks when the card ends. */
+.real {
   position: absolute;
   inset: 0;
-  transform: rotateY(180deg);
-  overflow: hidden;
-  background: #0d0b09;
-}
-
-.back img {
-  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: 4.7% / 3.4%;
+  opacity: 0;
+  filter: blur(8px) brightness(1.6);
+  pointer-events: none;
+  transition:
+    opacity 900ms ease,
+    filter 1300ms ease;
 }
 
-.flip-hint {
-  margin: 8px 0 0;
-  text-align: center;
-  font-size: 13px;
+.real.developed {
+  opacity: 1;
+  filter: none;
+}
+
+.card-tools {
+  display: flex;
+  gap: 8px;
+}
+
+.tool {
+  min-height: 34px;
+  padding: 4px 14px;
+  border: 1px solid var(--bark-hi);
+  border-radius: 999px;
+  background: var(--bark);
   color: var(--dust);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tool:hover {
+  color: var(--parchment);
+}
+
+.tool span {
+  color: var(--ember);
+}
+
+/* Our own card back, for cards with nothing printed on the back. */
+.card-back {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 6cqw;
+  border: 4.2cqw solid #120b07;
+  background:
+    radial-gradient(ellipse 60% 45% at 30% 30%, rgba(196, 120, 52, 0.45), transparent 70%),
+    radial-gradient(ellipse 55% 40% at 72% 70%, rgba(140, 70, 30, 0.5), transparent 70%),
+    radial-gradient(circle at 50% 50%, #5a3620, #2c190d 75%);
+}
+
+.card-back-oval {
+  display: grid;
+  place-items: center;
+  width: 68cqw;
+  height: 42cqw;
+  border-radius: 50%;
+  rotate: -14deg;
+  background: radial-gradient(ellipse at 40% 35%, #5d7fcc, #24407e 70%);
+  box-shadow:
+    0 0 0 1.6cqw #c98b4a,
+    0 0 0 2.4cqw #3a2416,
+    0 2cqw 4cqw rgba(0, 0, 0, 0.5);
+}
+
+.card-back-oval span {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 9cqw;
+  letter-spacing: 0.04em;
+  color: var(--parchment);
+  text-shadow: 0 0.4cqw 0 rgba(0, 0, 0, 0.5);
+}
+
+.card-back-pips {
+  display: flex;
+  gap: 2.4cqw;
+  font-size: 6cqw;
 }
 
 /* Frame colors. --frame is the border art, --bar the name/type plates, --box the text box. */
@@ -479,7 +580,13 @@ a {
   color: #17120c;
 }
 
+.face-content {
+  position: relative;
+  height: 100%;
+}
+
 .frame {
+  position: relative;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -512,10 +619,19 @@ a {
   justify-content: space-between;
 }
 
-.name {
+.name,
+.types {
+  flex: 1;
   min-width: 0;
   overflow: hidden;
+}
+
+.name {
   font-size: calc(5.4cqw * var(--fit, 1));
+}
+
+.types {
+  font-size: calc(4.6cqw * var(--fit, 1));
 }
 
 .cost {
@@ -528,9 +644,10 @@ a {
   box-shadow: -0.15em 0.12em 0 rgba(0, 0, 0, 0.85);
 }
 
-.type-bar {
-  font-size: calc(4.6cqw * var(--fit, 1));
-  overflow: hidden;
+.bar-stats {
+  flex: none;
+  font-weight: 800;
+  font-size: 4.8cqw;
 }
 
 .art {
@@ -563,7 +680,7 @@ a {
   margin: 0;
 }
 
-.textbox p + p {
+.rules > * + * {
   margin-top: 0.4em;
 }
 
@@ -577,6 +694,10 @@ a {
   border-top: 0.25cqw solid rgba(0, 0, 0, 0.25);
 }
 
+.flavor p + p {
+  margin-top: 0.3em;
+}
+
 .stats {
   position: absolute;
   right: 5cqw;
@@ -584,13 +705,24 @@ a {
   min-width: 16cqw;
   padding: 0.6cqw 2.6cqw;
   border-radius: 1.4cqw;
-  background: linear-gradient(180deg, var(--bar), color-mix(in srgb, var(--bar) 80%, var(--frame)));
+  background: linear-gradient(180deg, var(--bar, #e5ded3), color-mix(in srgb, var(--bar, #e5ded3) 80%, var(--frame, #7a736b)));
   box-shadow: 0 0 0 0.45cqw rgba(0, 0, 0, 0.6);
   text-align: center;
   font-family: var(--display);
   font-weight: 800;
   font-size: 5.4cqw;
   white-space: nowrap;
+}
+
+/* Loyalty and defense sit in a dark shield. */
+.stats.shield {
+  min-width: 13cqw;
+  padding: 1cqw 2cqw 2.2cqw;
+  border-radius: 0;
+  clip-path: polygon(0 0, 100% 0, 100% 62%, 50% 100%, 0 62%);
+  background: #1c1916;
+  color: var(--parchment);
+  box-shadow: none;
 }
 
 .artist {
@@ -610,11 +742,217 @@ a {
   opacity: 0.8;
 }
 
+/* Loyalty abilities and saga chapters: a dark badge beside the text. The badge is one
+   neutral shape for every cost, so it never hints whether a hidden cost is + or −. */
+.badged {
+  display: grid;
+  grid-template-columns: 2.1em 1fr;
+  align-items: center;
+  gap: 0.6em;
+}
+
+.badge {
+  display: grid;
+  place-items: center;
+  min-height: 1.7em;
+  padding: 0 0.15em;
+  background: #1c1916;
+  color: var(--parchment);
+  font-family: var(--display);
+  font-weight: 800;
+  white-space: nowrap;
+  clip-path: polygon(12% 0, 88% 0, 100% 50%, 88% 100%, 12% 100%, 0 50%);
+}
+
+.chapter .badge {
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  min-height: 2.1em;
+  font-size: 0.9em;
+}
+
+.kind-planeswalker .art {
+  flex-basis: 34%;
+}
+
+.kind-planeswalker .rules > .badged + .badged,
+.kind-planeswalker .rules > p + .badged {
+  margin-top: 0.55em;
+}
+
+/* Sagas: chapters on the left, tall art on the right. Classes: the reverse, with level bars. */
+.tall-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.4cqw;
+  margin: 0 1.6cqw;
+}
+
+.tall-body .art,
+.tall-body .textbox {
+  margin: 0;
+}
+
+.tall-body .textbox {
+  justify-content: flex-start;
+  font-size: calc(3.7cqw * var(--fit, 1));
+}
+
+.level-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5em;
+  margin: 0.5em -0.6em 0;
+  padding: 0.25em 0.6em;
+  background: color-mix(in srgb, var(--frame) 35%, var(--box));
+  font-family: var(--display);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Adventure and prepared spells: a second spell panel inside the text box. */
+.split-box {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.2cqw;
+  margin: 0 1.6cqw;
+}
+
+.split-box > .textbox {
+  margin: 0;
+  font-size: calc(3.7cqw * var(--fit, 1));
+}
+
+.inset {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8cqw;
+  padding: 0.9cqw;
+  background: color-mix(in srgb, var(--frame) 70%, #000);
+}
+
+.inset-bar {
+  min-height: 6.6cqw;
+  padding: 0.4cqw 1.6cqw;
+  border-radius: 1cqw;
+}
+
+.inset .name {
+  font-size: calc(4cqw * var(--fit, 1));
+}
+
+.inset .types {
+  font-size: calc(3.5cqw * var(--fit, 1));
+}
+
+.inset .cost {
+  font-size: 3.5cqw;
+}
+
+.inset .inset-text {
+  margin: 0;
+  padding: 1.6cqw 2cqw;
+  font-size: calc(3.5cqw * var(--fit, 1));
+}
+
+/* Faces printed sideways are laid out upright, then turned into place. */
+.sideways {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+}
+
+.halves {
+  height: 100%;
+  display: flex;
+  gap: 1.6cqw;
+}
+
+.halves > .frame {
+  flex: 1;
+  min-width: 0;
+}
+
+.halves .art {
+  flex-basis: 36%;
+}
+
+.aftermath {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.6cqw;
+}
+
+.aftermath > .frame {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+
+.aftermath > .frame .art {
+  flex-basis: 34%;
+}
+
+.aftermath-bottom {
+  position: relative;
+  flex: 0 0 56.3cqw;
+}
+
+.aftermath-bottom .frame .art {
+  flex-basis: 30%;
+}
+
+.flip-frame > .flip-half,
+.flip-frame > .upside-down {
+  flex: 0 0 33%;
+  min-height: 0;
+}
+
+.flip-half {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2cqw;
+}
+
+.flip-frame > .art {
+  flex: 1;
+}
+
+.upside-down {
+  display: flex;
+  rotate: 180deg;
+}
+
+.upside-down > .flip-half {
+  flex: 1;
+  min-width: 0;
+}
+
+.battle-frame .art {
+  flex: 1;
+}
+
+.battle-frame .textbox {
+  flex: 0 0 34%;
+  margin-right: 18cqw;
+}
+
+.battle-frame .stats {
+  right: 2.6cqw;
+  bottom: 3cqw;
+}
+
 /* While the card is hidden, word gaps are much wider than the gap between two blanks,
    so the number of words is never ambiguous. (Words contain no spaces, so word-spacing
    only touches the gaps between them.) */
 .masked .name,
-.masked .type-bar {
+.masked .types {
   word-spacing: 0.6em;
 }
 
