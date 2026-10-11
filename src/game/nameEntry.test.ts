@@ -1,46 +1,44 @@
 import { describe, expect, it } from 'vitest'
 import type { Card } from './card'
 import { guessName, newCardGame } from './cardGame'
-import { composeName, hiddenSlots, sanitizeEntry } from './nameEntry'
+import { composeName, entryKeys, slotCount } from './nameEntry'
 import { tokenize } from './tokens'
 
 const elves = tokenize('Llanowar Elves')
 const atraxa = tokenize("Atraxa, Praetors' Voice")
 
-describe('hiddenSlots', () => {
-  it('counts the name characters still hidden', () => {
-    expect(hiddenSlots(elves, new Set())).toBe(13)
-    expect(hiddenSlots(elves, new Set(['E']))).toBe(11)
-    expect(hiddenSlots(atraxa, new Set())).toBe(19)
+describe('slotCount', () => {
+  it('has a box for every letter of the name, revealed or not', () => {
+    expect(slotCount(elves)).toBe(13)
+    expect(slotCount(atraxa)).toBe(19)
   })
 })
 
-describe('sanitizeEntry', () => {
-  it('keeps guessable characters as keys and drops the rest', () => {
-    expect(sanitizeEntry("ab-c d,é'*", 99, new Set())).toBe('AB-CDE*')
+describe('entryKeys', () => {
+  it('keeps every typed letter in order, including ones already revealed on the card', () => {
+    expect(entryKeys("elspeth, sun's champion", 99)).toBe('ELSPETHSUNSCHAMPION')
+    expect(entryKeys('Eee', 99)).toBe('EEE')
   })
-  it('stops at the number of blanks', () => {
-    expect(sanitizeEntry('abcdef', 3, new Set())).toBe('ABC')
+  it('keeps hyphens and digits, folds accents, and drops spaces and punctuation', () => {
+    expect(entryKeys("Lim-Dûl's 2", 99)).toBe('LIM-DULS2')
   })
-  it('skips letters that are already revealed, so typing the whole name works', () => {
-    const name = tokenize("Elspeth, Sun's Champion")
-    const guessed = new Set(['E', 'S', 'N'])
-    const typed = sanitizeEntry('elspeth suns champion', hiddenSlots(name, guessed), guessed)
-    expect(composeName(name, guessed, typed)).toBe("ELSPETH, SUN'S CHAMPION")
+  it('stops once every box is full', () => {
+    expect(entryKeys('abcdef', 3)).toBe('ABC')
   })
 })
 
 describe('composeName', () => {
-  it('fills blanks in order around revealed letters, spaces and punctuation, in capitals', () => {
-    expect(composeName(elves, new Set(['E']), 'LLANOWARLVS')).toBe('LLANOWAR ELVES')
-    expect(composeName(atraxa, new Set(['A']), 'TRXPRETORSVOICE')).toBe("ATRAXA, PRAETORS' VOICE")
+  it('puts typed letters in the boxes, with the name’s own spaces and punctuation', () => {
+    expect(composeName(elves, 'LLANOWARELVES')).toBe('LLANOWAR ELVES')
+    expect(composeName(atraxa, 'ATRAXAPRAETORSVOICE')).toBe("ATRAXA, PRAETORS' VOICE")
   })
-  it('leaves unfilled blanks empty', () => {
-    expect(composeName(elves, new Set(), 'LL')).toBe('LL ')
+  it('leaves unfilled boxes empty', () => {
+    expect(composeName(elves, 'LL')).toBe('LL ')
   })
-  it('produces a winning guess when the letters are right', () => {
-    const card: Card = { n: 'Llanowar Elves', m: '{G}', t: 'Creature — Elf Druid', o: '', c: 'G', id: 'x' }
-    const name = composeName(elves, new Set(['E']), 'LLANOWARLVS')
-    expect(guessName(card, newCardGame(), name).status).toBe('won')
+  it('makes a winning guess when the whole name is typed', () => {
+    const card: Card = { n: "Elspeth, Sun's Champion", m: '{4}{W}{W}', t: 'Legendary Planeswalker — Elspeth', o: '', c: 'W', id: 'e' }
+    const name = tokenize(card.n)
+    const typed = entryKeys('elspeth suns champion', slotCount(name))
+    expect(guessName(card, newCardGame(), composeName(name, typed)).status).toBe('won')
   })
 })

@@ -1,7 +1,8 @@
-// "Guess the card": type into the card name's blanks. No suggestions, so the dialog gives
-// away nothing the card doesn't already show.
+// "Guess the card": type the whole name into the card name's boxes. Letters already revealed
+// on the card show faintly behind their boxes; nothing is skipped or filled in for you.
+// No suggestions, so the dialog gives away nothing the card doesn't already show.
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type SyntheticEvent } from 'react'
-import { composeName, hiddenSlots, sanitizeEntry } from '../game/nameEntry'
+import { composeName, entryKeys, slotCount } from '../game/nameEntry'
 import { isRevealed, type Token } from '../game/tokens'
 import { Sym } from './Sym'
 
@@ -30,7 +31,7 @@ function caretToEnd(e: SyntheticEvent<HTMLInputElement>) {
 }
 
 export function NameGuess({ tokens, guessed, tries, onGuess, onClose }: Props) {
-  const total = hiddenSlots(tokens, guessed)
+  const total = slotCount(tokens)
   const [typed, setTyped] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
   const complete = typed.length === total
@@ -44,7 +45,7 @@ export function NameGuess({ tokens, guessed, tries, onGuess, onClose }: Props) {
   useEffect(() => inputRef.current?.focus(), [])
 
   const submit = () => {
-    if (complete) onGuess(composeName(tokens, guessed, typed))
+    if (complete) onGuess(composeName(tokens, typed))
   }
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -55,15 +56,17 @@ export function NameGuess({ tokens, guessed, tries, onGuess, onClose }: Props) {
     }
   }
 
-  let blank = 0
+  let box = 0
   const cell = (t: Token, i: number) => {
-    if (t.kind === 'char' && !isRevealed(t, guessed)) {
-      const index = blank++
+    if (t.kind === 'char' && t.key !== null) {
+      const index = box++
       const ch = typed[index]
-      const cls = `cell${ch ? ' filled' : ''}${index === typed.length ? ' next' : ''}`
+      const known = isRevealed(t, guessed)
+      const mismatch = ch !== undefined && known && ch !== t.key
+      const cls = `cell${ch ? ' filled' : ''}${index === typed.length ? ' next' : ''}${mismatch ? ' mismatch' : ''}`
       return (
         <span key={i} className={cls}>
-          {ch ?? ''}
+          {ch ?? (known && <span className="hint">{t.ch.toUpperCase()}</span>)}
         </span>
       )
     }
@@ -86,7 +89,7 @@ export function NameGuess({ tokens, guessed, tries, onGuess, onClose }: Props) {
       <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="name-guess-title">
         <h2 id="name-guess-title">Guess the card</h2>
         <p className="dialog-note">
-          Fill in the blanks. A guess costs 1 of your {tries} {tries === 1 ? 'try' : 'tries'}.
+          Type the whole name. A guess costs 1 of your {tries} {tries === 1 ? 'try' : 'tries'}.
         </p>
         <div className="entry" style={{ '--boxes': boxes, '--units': units } as CSSProperties}>
           {words.map((w, i) => (
@@ -98,14 +101,14 @@ export function NameGuess({ tokens, guessed, tries, onGuess, onClose }: Props) {
             ref={inputRef}
             className="entry-input"
             value={typed}
-            onChange={(e) => setTyped(sanitizeEntry(e.target.value, total, guessed))}
+            onChange={(e) => setTyped(entryKeys(e.target.value, total))}
             onKeyDown={onKeyDown}
             onSelect={caretToEnd}
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="characters"
             spellCheck={false}
-            aria-label={`Card name: ${typed.length} of ${total} blanks filled`}
+            aria-label={`Card name: ${typed.length} of ${total} letters typed`}
           />
         </div>
         <div className="dialog-actions">

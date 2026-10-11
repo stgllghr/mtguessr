@@ -1317,6 +1317,17 @@ a {
   color: var(--dust);
 }
 
+/* A letter already revealed on the card, shown faintly until it's typed over. */
+.cell .hint {
+  color: var(--dust);
+  opacity: 0.45;
+}
+
+.cell.mismatch {
+  color: #f07a5e;
+  border-bottom-color: #f07a5e;
+}
+
 .cell.filled {
   border-bottom-color: var(--parchment);
 }
