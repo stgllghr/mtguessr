@@ -1,15 +1,14 @@
-// An endless run: a seeded shuffle of the pool, the current card's game, and the streak.
+// An endless run: a seeded shuffle of the pool's cards, the current card's game, and the streak.
+// Every function takes `cards`: the pool's card list (see pools.ts).
 import type { Card } from './card'
 import { buildView, guessKey, guessName, newCardGame, type CardGame } from './cardGame'
+import { isPool, type Pool } from './pools'
 import { qaCategory, qaOrder } from './qa'
 import { seededShuffle } from './random'
 
-/** The pools players choose from. QA ('qa') is only offered behind the ?qa link. */
-export const POOLS = [500, 2000, 10000, 'all'] as const
-export type Pool = (typeof POOLS)[number] | 'qa'
-const ALL_POOLS: readonly Pool[] = [...POOLS, 'qa']
+export type { Pool }
 
-export type Settings = { pool: Pool; hard: boolean }
+export type Settings = { pool: Pool; hard: boolean; setName?: string }
 export type Run = { settings: Settings; seed: number; index: number; streak: number; game: CardGame }
 export type Bests = Record<string, number>
 
@@ -31,12 +30,12 @@ export function shuffleOrder(n: number, seed: number): number[] {
 
 function orderFor(pool: Pool, cards: Card[], seed: number): number[] {
   if (pool === 'qa') return cached(`qa:${cards.length}:${seed}`, () => qaOrder(cards, seed))
-  return shuffleOrder(poolSize(pool, cards), seed)
+  return shuffleOrder(cards.length, seed)
 }
 
+/** How many cards a run of this pool goes through before reshuffling. */
 export function poolSize(pool: Pool, cards: Card[]): number {
-  if (pool === 'qa') return cards.filter(qaCategory).length
-  return pool === 'all' ? cards.length : Math.min(pool, cards.length)
+  return pool === 'qa' ? cards.filter(qaCategory).length : cards.length
 }
 
 export const newSeed = () => Math.floor(Math.random() * 2 ** 31)
@@ -89,7 +88,7 @@ export function isRun(x: unknown): x is Run {
   return (
     !!r &&
     typeof r === 'object' &&
-    ALL_POOLS.includes(r.settings?.pool) &&
+    isPool(r.settings?.pool) &&
     typeof r.settings.hard === 'boolean' &&
     Number.isInteger(r.seed) &&
     Number.isInteger(r.index) &&

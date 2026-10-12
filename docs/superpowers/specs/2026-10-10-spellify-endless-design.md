@@ -124,3 +124,24 @@ Class, Planeswalker (each type shuffled). The header shows the frame type and po
 **Reveal** ends the card and shows the real image for comparison; **Skip** moves on. A miss
 never ends a QA run, and QA runs never count toward best streaks. MDFC and transform
 cards are now tagged separately in the data (`mdfc`, `transform`).
+
+## Formats, sets and the set line (added 2026-10-11)
+
+Pools are grouped on the start screen:
+
+| Group | Pools |
+|---|---|
+| Commander | Top 500 / 2,000 / 10,000 by EDHREC rank |
+| Standard, Pioneer, Modern | Staples, or any legal card (`g` letters in the snapshot) |
+| All of Magic | Any card; legendary creatures (front face is a legendary creature) |
+| One set | Searchable set list from Scryfall; that set's printings fetched live |
+
+- **Staples** (`scripts/build-staples.mjs` → `public/staples.json`): Magic Online Challenge and
+  League decklists from the last 6 weeks on mtgo.com; a card is a staple if it's in at least
+  1% of decks (main or sideboard). Basic lands are left out. Names are matched to the
+  snapshot ignoring case, accents and punctuation (MTGO writes split cards "Rough/Tumble").
+- **Set pools** use each set's own printing: image, collector number, rarity, flavor text and
+  artist come from the printing; rules text from the snapshot.
+- **Set line:** bottom left, as on modern cards: rarity letter and collector number (numeric
+  numbers padded to four digits), then set code, a dot and the artist. All blanks, guessable
+  with letter and number keys.

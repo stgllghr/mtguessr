@@ -5,8 +5,13 @@ shown with every piece of text hidden. Guess letters, numbers and mana symbols t
 blanks, then name the card. Every guess costs one of 13 tries. Solve cards to build a streak; one
 miss ends the run.
 
-- **Card pools:** Top 500 / 2,000 / 10,000 Commander cards by EDHREC rank, or **Any card** from
-  the full catalog (about 32,000 cards, picked uniformly at random).
+- **Card pools:**
+  - **Commander:** Top 500 / 2,000 / 10,000 by EDHREC rank.
+  - **Standard, Pioneer, Modern:** the format's staples (most-played in recent Magic Online
+    tournaments), or any legal card.
+  - **All of Magic:** any card (about 32,000), or every legendary creature.
+  - **One set:** pick any set; its cards come live from Scryfall.
+- **Set line:** the rarity, collector number and set code at the bottom left are blanks too.
 - **Hard mode:** also hides the frame color.
 - **Real card layouts:** planeswalkers, sagas, classes, adventures, prepared spells, split and
   aftermath cards, flip cards, battles and double-faced cards put their blanks where the text is
@@ -23,6 +28,16 @@ npm run dev
 ```
 
 Open http://localhost:5173. For a production build served locally: `npm run build && npm run preview`.
+
+## Refresh the format staples
+
+`public/staples.json` holds the most-played Standard, Pioneer and Modern cards, counted from
+the last six weeks of Magic Online Challenges and Leagues on mtgo.com (a card is a staple if
+it's in at least 1% of decks). To update it (takes about 15 minutes; the site is slow):
+
+```bash
+npm run staples
+```
 
 ## QA mode
 

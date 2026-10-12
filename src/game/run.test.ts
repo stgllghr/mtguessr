@@ -17,15 +17,10 @@ describe('shuffleOrder', () => {
 describe('runs', () => {
   const settings = { pool: 500 as const, hard: false }
 
-  it('caps the pool at the available cards; "all" uses everything', () => {
+  it('goes through every card of the pool it is given', () => {
     expect(poolSize(500, cards)).toBe(30)
-    expect(poolSize('all', cards)).toBe(30)
-    expect(poolSize(10 as never, cards)).toBe(10)
-  })
-
-  it('draws only from within a small pool', () => {
     const names = new Set<string>()
-    for (let seed = 0; seed < 50; seed++) names.add(currentCard(startRun({ pool: 10 as never, hard: false }, seed), cards).n)
+    for (let seed = 0; seed < 50; seed++) names.add(currentCard(startRun(settings, seed), cards.slice(0, 10)).n)
     for (const n of names) expect(cards.slice(0, 10).map((c) => c.n)).toContain(n)
   })
 
@@ -74,6 +69,7 @@ describe('runs', () => {
     expect(isRun(startRun(settings, 1))).toBe(true)
     expect(isRun(null)).toBe(false)
     expect(isRun({ settings: { pool: 3, hard: false }, seed: 1, index: 0, streak: 0, game: { guesses: [], status: 'playing' } })).toBe(false)
+    expect(isRun({ ...startRun({ pool: 'set:DSK', hard: true }, 1) })).toBe(true)
   })
 })
 

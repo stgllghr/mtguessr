@@ -180,6 +180,26 @@ describe('sections', () => {
   })
 })
 
+describe('set line', () => {
+  const printed: Card = { ...elves, s: 'WOE', cn: '221', ry: 'U' }
+  it('hides the rarity, collector number (padded like modern cards) and set code', () => {
+    const info = buildView(printed).info!
+    expect(shown(info.rarity, newCardGame())).toBe('_')
+    expect(shown(info.number, newCardGame())).toBe('____')
+    expect(shown(info.set, newCardGame())).toBe('___')
+    expect(shown(buildView({ ...printed, cn: '12a' }).info!.number, newCardGame())).toBe('___')
+  })
+  it('counts set line letters and numbers as hits and reveals them', () => {
+    const g = play(printed, ['W', '0'])
+    expect(g.guesses.map((x) => x.hit)).toEqual([true, true])
+    expect(shown(buildView(printed).info!.set, g)).toBe('W__')
+    expect(shown(buildView(printed).info!.number, g)).toBe('0___')
+  })
+  it('is absent for cards without printing details', () => {
+    expect(buildView(elves).info).toBeNull()
+  })
+})
+
 describe('urls and names', () => {
   it('normalizes names', () => {
     expect(normalizeName("Lim-Dûl's Vault")).toBe('limdulsvault')

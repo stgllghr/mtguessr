@@ -1,8 +1,10 @@
 // Title, pool and mode choice, best streak, and Play / Continue.
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { MAX_TRIES } from '../game/cardGame'
-import { bestKey, type Bests, type Pool, type Run, type Settings } from '../game/run'
-import { POOL_INFO, settingsLabel } from './labels'
+import type { Format, Pool } from '../game/pools'
+import { bestKey, type Bests, type Run, type Settings } from '../game/run'
+import { fetchSets, type SetInfo } from '../data/scryfall'
+import { settingsLabel } from './labels'
 
 const TITLE = [...'SPELLIFY']
 const REVEAL_ORDER = [3, 1, 7, 5]
@@ -30,39 +32,118 @@ function Title() {
   )
 }
 
+type Group = 'commander' | 'standard' | 'pioneer' | 'modern' | 'everything' | 'set' | 'qa'
+
+const GROUPS: { id: Group; label: string }[] = [
+  { id: 'commander', label: 'Commander' },
+  { id: 'standard', label: 'Standard' },
+  { id: 'pioneer', label: 'Pioneer' },
+  { id: 'modern', label: 'Modern' },
+  { id: 'everything', label: 'All of Magic' },
+  { id: 'set', label: 'One set' },
+]
+
+function groupOf(pool: Pool): Group {
+  if (typeof pool === 'number') return 'commander'
+  if (pool === 'all' || pool === 'legends') return 'everything'
+  if (pool === 'qa') return 'qa'
+  if (pool.startsWith('set:')) return 'set'
+  return pool.replace('-staples', '') as Format
+}
+
+const STAPLES_NOTE = 'Most-played in recent Magic Online tournaments'
+
+function choices(group: Group): { pool: Pool; label: string; note: string }[] {
+  switch (group) {
+    case 'commander':
+      return [
+        { pool: 500, label: 'Top 500', note: 'Staples in almost every deck' },
+        { pool: 2000, label: 'Top 2,000', note: 'Popular Commander cards' },
+        { pool: 10000, label: 'Top 10,000', note: 'Deep cuts, still EDHREC-ranked' },
+      ]
+    case 'everything':
+      return [
+        { pool: 'all', label: 'Any card', note: 'Every card ever printed, at random' },
+        { pool: 'legends', label: 'Legendary creatures', note: 'Every legend in Magic’s history' },
+      ]
+    case 'qa':
+      return [{ pool: 'qa', label: 'QA: special frames', note: 'Takes turns through every special card frame' }]
+    case 'set':
+      return []
+    default:
+      return [
+        { pool: `${group}-staples`, label: 'Staples', note: STAPLES_NOTE },
+        { pool: group, label: 'Any legal card', note: `Every ${group[0].toUpperCase()}${group.slice(1)}-legal card` },
+      ]
+  }
+}
+
 type Props = {
-  pools: readonly Pool[]
+  qa: boolean
   settings: Settings
   onSettings: (s: Settings) => void
+  count: (pool: Pool) => number | null
   bests: Bests
   saved: Run | null
-  allCount: number | null
   busy: boolean
+  error: string | null
   onPlay: () => void
   onResume: () => void
 }
 
-export function StartScreen({ pools, settings, onSettings, bests, saved, allCount, busy, onPlay, onResume }: Props) {
+export function StartScreen({ qa, settings, onSettings, count, bests, saved, busy, error, onPlay, onResume }: Props) {
+  const [group, setGroup] = useState<Group>(() => groupOf(settings.pool))
+  const groups = qa ? [...GROUPS, { id: 'qa' as const, label: 'QA' }] : GROUPS
+  const ready = groupOf(settings.pool) === group
   const best = bests[bestKey(settings)] ?? 0
+
+  const pickGroup = (g: Group) => {
+    setGroup(g)
+    const first = choices(g)[0]
+    if (first) onSettings({ ...settings, pool: first.pool, setName: undefined })
+  }
+
   return (
     <main className="start">
       <Title />
       <p className="tagline">Name the Magic card before your {MAX_TRIES} tries run out. Then do it again.</p>
 
-      <fieldset className="pools">
-        <legend>Card pool</legend>
-        {pools.map((p) => {
-          const info = POOL_INFO[String(p)]
-          return (
-            <label key={p} className={`pool${settings.pool === p ? ' selected' : ''}`}>
-              <input type="radio" name="pool" checked={settings.pool === p} onChange={() => onSettings({ ...settings, pool: p })} />
-              <span className="pool-label">{info.label}</span>
-              <span className="pool-note">
-                {p === 'all' && allCount ? `${allCount.toLocaleString()} cards, at random` : info.note}
-              </span>
-            </label>
-          )
-        })}
+      <fieldset className="groups">
+        <legend>Play cards from</legend>
+        <div className="group-tabs" role="radiogroup" aria-label="Play cards from">
+          {groups.map((g) => (
+            <button
+              key={g.id}
+              type="button"
+              role="radio"
+              aria-checked={group === g.id}
+              className={`group-tab${group === g.id ? ' selected' : ''}`}
+              onClick={() => pickGroup(g.id)}
+            >
+              {g.label}
+            </button>
+          ))}
+        </div>
+
+        {group === 'set' ? (
+          <SetPicker
+            value={settings.pool.toString().startsWith('set:') ? settings.pool.toString().slice(4) : null}
+            onPick={(set) => onSettings({ ...settings, pool: `set:${set.code}`, setName: set.name })}
+          />
+        ) : (
+          <div className="pools">
+            {choices(group).map((c) => {
+              const n = count(c.pool)
+              return (
+                <label key={String(c.pool)} className={`pool${settings.pool === c.pool ? ' selected' : ''}`}>
+                  <input type="radio" name="pool" checked={settings.pool === c.pool} onChange={() => onSettings({ ...settings, pool: c.pool, setName: undefined })} />
+                  <span className="pool-label">{c.label}</span>
+                  <span className="pool-note">{n ? `${c.note} · ${n.toLocaleString()} cards` : c.note}</span>
+                </label>
+              )
+            })}
+          </div>
+        )}
       </fieldset>
 
       <label className="toggle">
@@ -74,7 +155,9 @@ export function StartScreen({ pools, settings, onSettings, bests, saved, allCoun
         </span>
       </label>
 
-      {settings.pool === 'qa' ? (
+      {!ready ? (
+        <p className="best">Pick a set to play.</p>
+      ) : settings.pool === 'qa' ? (
         <p className="best">QA runs skip the streak: every card moves on to the next, and nothing counts toward best streaks.</p>
       ) : (
         <p className="best">
@@ -84,7 +167,7 @@ export function StartScreen({ pools, settings, onSettings, bests, saved, allCoun
 
       {saved ? (
         <div className="start-actions">
-          <button type="button" className="btn" onClick={onPlay} disabled={busy}>
+          <button type="button" className="btn" onClick={onPlay} disabled={busy || !ready}>
             New run
           </button>
           <button type="button" className="btn btn-primary btn-wide" onClick={onResume} disabled={busy} autoFocus>
@@ -96,11 +179,12 @@ export function StartScreen({ pools, settings, onSettings, bests, saved, allCoun
         </div>
       ) : (
         <div className="start-actions">
-          <button type="button" className="btn btn-primary btn-wide" onClick={onPlay} disabled={busy} autoFocus>
-            {busy ? 'Loading every card…' : 'Play'}
+          <button type="button" className="btn btn-primary btn-wide" onClick={onPlay} disabled={busy || !ready} autoFocus>
+            {busy ? 'Loading cards…' : 'Play'}
           </button>
         </div>
       )}
+      {error && <p className="start-error">{error}</p>}
 
       <details className="how">
         <summary>How to play</summary>
@@ -117,10 +201,48 @@ export function StartScreen({ pools, settings, onSettings, bests, saved, allCoun
         </ul>
       </details>
       <p className="credits">
-        Card data and images from <a href="https://scryfall.com">Scryfall</a>. Popularity from{' '}
-        <a href="https://edhrec.com">EDHREC</a>. Inspired by EDHREC's{' '}
+        Card data and images from <a href="https://scryfall.com">Scryfall</a>. Commander popularity from{' '}
+        <a href="https://edhrec.com">EDHREC</a>; format staples from{' '}
+        <a href="https://www.mtgo.com/decklists">Magic Online tournament results</a>. Inspired by EDHREC's{' '}
         <a href="https://edhrec.com/games/spellify">Spellify</a>. Not affiliated with Wizards of the Coast.
       </p>
     </main>
+  )
+}
+
+/** Searchable list of sets, newest first, loaded from Scryfall. */
+function SetPicker({ value, onPick }: { value: string | null; onPick: (set: SetInfo) => void }) {
+  const [sets, setSets] = useState<SetInfo[] | null>(null)
+  const [failed, setFailed] = useState(false)
+  const [query, setQuery] = useState('')
+
+  useEffect(() => {
+    fetchSets().then(setSets, () => setFailed(true))
+  }, [])
+
+  const shown = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return (sets ?? []).filter((s) => !q || s.name.toLowerCase().includes(q) || s.code.toLowerCase() === q).slice(0, 60)
+  }, [sets, query])
+
+  if (failed) return <p className="set-status">Couldn’t reach Scryfall for the list of sets. Check your connection and try again.</p>
+  if (!sets) return <p className="set-status">Loading sets…</p>
+  return (
+    <div className="set-picker">
+      <input className="set-search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search sets, e.g. Duskmourn or DSK" aria-label="Search sets" />
+      <ul className="set-list">
+        {shown.map((s) => (
+          <li key={s.code}>
+            <button type="button" className={`set-option${value === s.code ? ' selected' : ''}`} onClick={() => onPick(s)}>
+              <span className="set-name">{s.name}</span>
+              <span className="set-meta">
+                {s.code} · {s.released.slice(0, 4)}
+              </span>
+            </button>
+          </li>
+        ))}
+        {shown.length === 0 && <li className="set-status">No sets match “{query}”.</li>}
+      </ul>
+    </div>
   )
 }

@@ -2,7 +2,7 @@
 // frames scale with the card, and rotated parts reuse the same pieces.
 import { useContext, type CSSProperties, type ReactNode } from 'react'
 import { hybridPair, type Face } from '../game/card'
-import type { CardView, FaceView, Section } from '../game/cardGame'
+import type { CardView, FaceView, InfoLine as Info, Section } from '../game/cardGame'
 import { MaskContext, TokenText } from './TokenText'
 import { useFit } from './useFit'
 
@@ -116,14 +116,31 @@ export function Stats({ face }: { face: FaceView }) {
   )
 }
 
-export function Artist({ face }: { face: FaceView }) {
-  if (face.artist.length === 0) return null
+/** The printed line at the bottom left: rarity and collector number, then set code and artist. */
+export function InfoLine({ info, face }: { info: Info | null; face: FaceView }) {
+  if (!info && face.artist.length === 0) return null
   return (
-    <Fit axis="x" min={0.6} className="artist">
-      <span className="brush" aria-hidden>
-        ✎
-      </span>{' '}
-      <TokenText tokens={face.artist} />
+    <Fit axis="x" min={0.6} className="info">
+      {info && (
+        <div className="info-row">
+          <TokenText tokens={info.rarity} /> <TokenText tokens={info.number} />
+        </div>
+      )}
+      <div className="info-row">
+        {info && (
+          <>
+            <TokenText tokens={info.set} /> <span aria-hidden>•</span>{' '}
+          </>
+        )}
+        {face.artist.length > 0 && (
+          <>
+            <span className="brush" aria-hidden>
+              ✎
+            </span>{' '}
+            <TokenText tokens={face.artist} />
+          </>
+        )}
+      </div>
     </Fit>
   )
 }

@@ -71,6 +71,10 @@ function compactFace(raw, face, layout, index) {
   return out
 }
 
+// Formats with their own pools, as single letters in a card's `g` field.
+const FORMAT_LETTERS = { standard: 's', pioneer: 'p', modern: 'm' }
+const RARITY_LETTERS = { common: 'C', uncommon: 'U', rare: 'R', mythic: 'M', special: 'S', bonus: 'B' }
+
 export function toCompact(raw) {
   const layout = layoutOf(raw)
   const faces = raw.card_faces ?? [raw]
@@ -78,6 +82,14 @@ export function toCompact(raw) {
   if (faces[0].name !== raw.name) card.full = raw.name
   if (raw.edhrec_rank !== undefined) card.r = raw.edhrec_rank
   card.id = raw.id
+  if (raw.set) card.s = raw.set.toUpperCase()
+  if (raw.collector_number) card.cn = raw.collector_number
+  if (RARITY_LETTERS[raw.rarity]) card.ry = RARITY_LETTERS[raw.rarity]
+  const formats = Object.entries(FORMAT_LETTERS)
+    .filter(([format]) => raw.legalities?.[format] === 'legal')
+    .map(([, letter]) => letter)
+    .join('')
+  if (formats) card.g = formats
   if (layout && faces.length > 1) {
     card.lay = layout
     card.x = faces.slice(1).map((f, i) => compactFace(raw, f, layout, i + 1))

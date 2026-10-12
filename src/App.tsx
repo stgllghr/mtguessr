@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { fetchSetPrintings } from './data/scryfall'
 import type { Card } from './game/card'
 import { buildView, guessedKeys, triesLeft } from './game/cardGame'
+import { fromPrinting, isPool, nameIndex, poolCards, poolNeeds, type Catalog, type Staples } from './game/pools'
+import { qaCategory } from './game/qa'
 import {
-  POOLS,
   applyGuess,
   bestKey,
   currentCard,
@@ -19,7 +21,6 @@ import {
   type Run,
   type Settings,
 } from './game/run'
-import { qaCategory } from './game/qa'
 import { load, save } from './game/storage'
 import { charKey } from './game/tokens'
 import { CardFace } from './ui/CardFace'
@@ -32,13 +33,11 @@ import { StartScreen } from './ui/StartScreen'
 
 // QA mode (only cards with special frames) is offered behind a hidden link: add ?qa to the address.
 const QA = typeof location !== 'undefined' && new URLSearchParams(location.search).has('qa')
-const CHOOSABLE: readonly Pool[] = QA ? [...POOLS, 'qa'] : POOLS
-// Every card is needed for the full catalog, and for QA (rare frames are mostly outside the top 10,000).
-const needsAllCards = (pool: Pool) => pool === 'all' || pool === 'qa'
+const allowed = (pool: Pool) => QA || pool !== 'qa'
 
 const KEYS = { settings: 'spellify-endless:settings', bests: 'spellify-endless:bests', run: 'spellify-endless:run' }
 
-async function fetchCards(file: string): Promise<Card[]> {
+async function fetchJson<T>(file: string): Promise<T> {
   const res = await fetch(`/${file}`)
   if (!res.ok) throw new Error(`${file}: HTTP ${res.status}`)
   return res.json()
@@ -46,56 +45,94 @@ async function fetchCards(file: string): Promise<Card[]> {
 
 function loadSettings(): Settings {
   const s = load<Partial<Settings> | null>(KEYS.settings, null)
-  return s && CHOOSABLE.includes(s.pool as Pool) && typeof s.hard === 'boolean' ? (s as Settings) : { pool: 500, hard: false }
+  return s && isPool(s.pool) && allowed(s.pool) && typeof s.hard === 'boolean' ? (s as Settings) : { pool: 500, hard: false }
 }
 
 function loadRun(): Run | null {
   const r = load<unknown>(KEYS.run, null)
-  return isRun(r) && CHOOSABLE.includes(r.settings.pool) ? r : null
+  return isRun(r) && allowed(r.settings.pool) ? r : null
 }
 
 export default function App() {
   const [top, setTop] = useState<Card[] | null>(null)
   const [rest, setRest] = useState<Card[] | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [staples, setStaples] = useState<Staples | null>(null)
+  const [sets, setSets] = useState<Record<string, Card[]>>({})
+  const [fatal, setFatal] = useState<string | null>(null)
+  const [startError, setStartError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [settings, setSettings] = useState(loadSettings)
   const [bests, setBests] = useState<Bests>(() => load(KEYS.bests, {}))
   const [run, setRun] = useState<Run | null>(loadRun)
   const [screen, setScreen] = useState<'start' | 'play'>(() => ((loadRun()?.game.status ?? 'lost') !== 'lost' ? 'play' : 'start'))
   const [naming, setNaming] = useState(false)
-  const restRequest = useRef<Promise<Card[]> | null>(null)
+  const requests = useRef<Record<string, Promise<unknown>>>({})
+
+  /** Starts a download once; later callers share it. A failed one can be retried. */
+  const once = useCallback(<T,>(key: string, make: () => Promise<T>): Promise<T> => {
+    requests.current[key] ??= make().catch((err) => {
+      delete requests.current[key]
+      throw err
+    })
+    return requests.current[key] as Promise<T>
+  }, [])
 
   useEffect(() => {
-    fetchCards('cards-top.json')
+    fetchJson<Card[]>('cards-top.json')
       .then(setTop)
-      .catch(() => setError('The card list did not load. Check your connection, then reload the page.'))
-  }, [])
+      .catch(() => setFatal('The card list did not load. Check your connection, then reload the page.'))
+    once('staples', () => fetchJson<Staples>('staples.json')).then(setStaples, () => {})
+  }, [once])
 
-  const loadRest = useCallback(() => {
-    restRequest.current ??= fetchCards('cards-rest.json').then(
-      (r) => {
+  const all = useMemo(() => (top && rest ? top.concat(rest) : null), [top, rest])
+  const catalog = useMemo<Catalog | null>(() => (top ? { top, all, staples, sets } : null), [top, all, staples, sets])
+
+  /** Loads whatever a pool needs. Rejects with a message for the player. */
+  const ensure = useCallback(
+    async (pool: Pool) => {
+      if (!top) return
+      const needs = poolNeeds(pool)
+      let allCards = all
+      if (needs.all && !allCards) {
+        const r = await once('rest', () => fetchJson<Card[]>('cards-rest.json')).catch(() => {
+          throw new Error('The full card list did not load. Check your connection and try again.')
+        })
         setRest(r)
-        return r
-      },
-      (e) => {
-        restRequest.current = null
-        setError('The full card list did not load. Check your connection, then reload the page.')
-        throw e
-      },
-    )
-    return restRequest.current
-  }, [])
+        allCards = top.concat(r)
+      }
+      if (needs.staples && !staples) {
+        setStaples(
+          await once('staples', () => fetchJson<Staples>('staples.json')).catch(() => {
+            throw new Error('The tournament staples list did not load. Check your connection and try again.')
+          }),
+        )
+      }
+      if (needs.set && !sets[needs.set] && allCards) {
+        const code = needs.set
+        const printings = await once(`set:${code}`, () => fetchSetPrintings(code)).catch(() => {
+          throw new Error('Couldn’t load that set from Scryfall. Check your connection and try again.')
+        })
+        const index = nameIndex(allCards)
+        const cards = printings.flatMap((p) => fromPrinting(p, index) ?? [])
+        setSets((s) => ({ ...s, [code]: cards }))
+        if (cards.length === 0) throw new Error('That set has no cards this game can show.')
+      }
+    },
+    [top, all, staples, sets, once],
+  )
 
-  const allCards = useMemo(() => (top && rest ? top.concat(rest) : null), [top, rest])
-  const cards = run ? (needsAllCards(run.settings.pool) ? allCards : top) : null
+  const cards = useMemo(() => (run && catalog ? poolCards(run.settings.pool, catalog) : null), [run?.settings.pool, catalog])
   const card = run && cards ? currentCard(run, cards) : null
   const view = useMemo(() => (card ? buildView(card) : null), [card])
 
-  // A saved "Any card" run needs the full list before it can show its card.
+  // A saved run may need more card data (the full list, staples, or its set) before it can show its card.
   useEffect(() => {
-    if (screen === 'play' && run && needsAllCards(run.settings.pool) && !rest) loadRest().catch(() => {})
-  }, [screen, run?.settings.pool, rest, loadRest])
+    if (screen !== 'play' || !run || cards) return
+    ensure(run.settings.pool).catch((err: Error) => {
+      setStartError(err.message)
+      setScreen('start')
+    })
+  }, [screen, run, cards, ensure])
 
   // Card data changed under a saved run (e.g. after refreshing the snapshot): start over.
   useEffect(() => {
@@ -114,15 +151,16 @@ export default function App() {
 
   const begin = async (s: Settings) => {
     setSettings(s)
-    if (needsAllCards(s.pool)) {
-      setBusy(true)
-      try {
-        await loadRest()
-      } catch {
-        return
-      } finally {
-        setBusy(false)
-      }
+    setStartError(null)
+    setBusy(true)
+    try {
+      await ensure(s.pool)
+    } catch (err) {
+      setStartError((err as Error).message)
+      setScreen('start')
+      return
+    } finally {
+      setBusy(false)
     }
     setRun(startRun(s, newSeed()))
     setNaming(false)
@@ -162,26 +200,27 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey)
   })
 
-  if (error) return <Message title="Something went wrong" body={error} />
-  if (!top) return <Message title="Shuffling the deck…" />
+  if (fatal) return <Message title="Something went wrong" body={fatal} />
+  if (!top || !catalog) return <Message title="Shuffling the deck…" />
 
   if (screen === 'start' || !run) {
     return (
       <StartScreen
-        pools={CHOOSABLE}
+        qa={QA}
         settings={settings}
         onSettings={setSettings}
+        count={(pool) => poolCards(pool, catalog)?.length ?? null}
         bests={bests}
         saved={run && run.game.status !== 'lost' ? run : null}
-        allCount={allCards?.length ?? null}
         busy={busy}
+        error={startError}
         onPlay={() => begin(settings)}
         onResume={() => setScreen('play')}
       />
     )
   }
 
-  if (!card || !view) return <Message title="Loading every card…" />
+  if (!card || !view || !cards) return <Message title="Loading cards…" />
 
   const guessed = guessedKeys(run.game)
   const results = new Map(run.game.guesses.flatMap((g) => (g.type === 'key' ? [[g.key, g.hit] as const] : [])))
@@ -200,7 +239,7 @@ export default function App() {
           <p className="run-meta">
             <span className="run-mode">{run.settings.hard ? 'QA · Hard' : 'QA'}</span>
             <span>
-              Card <strong>{run.index + 1}</strong> of {poolSize('qa', cards!).toLocaleString()}
+              Card <strong>{run.index + 1}</strong> of {poolSize('qa', cards).toLocaleString()}
             </span>
           </p>
         ) : (

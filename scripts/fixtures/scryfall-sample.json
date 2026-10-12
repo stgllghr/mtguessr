@@ -101,7 +101,10 @@
   "digital": false,
   "edhrec_rank": 58,
   "legalities": {
-   "commander": "legal"
+   "commander": "legal",
+   "standard": "legal",
+   "pioneer": "legal",
+   "modern": "legal"
   },
   "colors": [
    "G"
@@ -112,7 +115,10 @@
   "flavor_text": "The elves of the Llanowar forest have defended it for generations. It is their sacred duty to keep outside influences from corrupting their ancestral home.",
   "artist": "Kev Walker",
   "power": "1",
-  "toughness": "1"
+  "toughness": "1",
+  "set": "fdn",
+  "collector_number": "227",
+  "rarity": "common"
  },
  "Atraxa, Praetors' Voice": {
   "id": "d0d33d52-3d28-4635-b985-51e126289259",
@@ -153,7 +159,10 @@
   "digital": false,
   "edhrec_rank": 3334,
   "legalities": {
-   "commander": "legal"
+   "commander": "legal",
+   "standard": "not_legal",
+   "pioneer": "not_legal",
+   "modern": "legal"
   },
   "colors": [
    "U"
@@ -162,7 +171,10 @@
   "type_line": "Legendary Planeswalker — Jace",
   "oracle_text": "+2: Look at the top card of target player's library. You may put that card on the bottom of that player's library.\n0: Draw three cards, then put two cards from your hand on top of your library in any order.\n−1: Return target creature to its owner's hand.\n−12: Exile all cards from target player's library, then that player shuffles their hand into their library.",
   "artist": "Jason Chan",
-  "loyalty": "3"
+  "loyalty": "3",
+  "set": "2xm",
+  "collector_number": "56",
+  "rarity": "mythic"
  },
  "Fire // Ice": {
   "id": "18303862-4726-4136-814f-157aa7006579",

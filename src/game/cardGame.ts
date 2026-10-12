@@ -22,7 +22,10 @@ export type FaceView = {
   artist: Token[]
 }
 
-export type CardView = { layout: Layout; faces: FaceView[]; answer: Token[] }
+/** The printed line at the bottom left: rarity letter, collector number and set code. */
+export type InfoLine = { rarity: Token[]; number: Token[]; set: Token[] }
+
+export type CardView = { layout: Layout; faces: FaceView[]; answer: Token[]; info: InfoLine | null }
 
 export type Guess = { type: 'key'; key: string; hit: boolean } | { type: 'name'; text: string; hit: boolean }
 export type CardGame = { guesses: Guess[]; status: 'playing' | 'won' | 'lost' }
@@ -71,9 +74,23 @@ function buildFace(face: Face): FaceView {
   }
 }
 
-export function buildView(card: Card): CardView {
-  return { layout: card.lay ?? 'normal', faces: facesOf(card).map(buildFace), answer: tokenize(answerName(card)) }
+function infoLine(card: Card): InfoLine | null {
+  if (!card.s) return null
+  // Modern cards print the collector number with leading zeros: 221 → 0221.
+  const number = card.cn && /^\d+$/.test(card.cn) ? card.cn.padStart(4, '0') : (card.cn ?? '')
+  return { rarity: tokenize(card.ry ?? ''), number: tokenize(number), set: tokenize(card.s) }
 }
+
+export function buildView(card: Card): CardView {
+  return {
+    layout: card.lay ?? 'normal',
+    faces: facesOf(card).map(buildFace),
+    answer: tokenize(answerName(card)),
+    info: infoLine(card),
+  }
+}
+
+const infoTokens = (info: InfoLine | null) => (info ? [...info.rarity, ...info.number, ...info.set] : [])
 
 export function faceTokens(f: FaceView): Token[] {
   const sections = f.sections.flatMap((s) => [...(s.badge ?? []), ...s.tokens])
@@ -95,7 +112,7 @@ function settle(game: CardGame, won: boolean): CardGame {
 
 export function guessKey(view: CardView, game: CardGame, key: string): CardGame {
   if (game.status !== 'playing' || guessedKeys(game).has(key)) return game
-  const hit = keysIn(view.faces.flatMap(faceTokens)).has(key)
+  const hit = keysIn([...view.faces.flatMap(faceTokens), ...infoTokens(view.info)]).has(key)
   const next: CardGame = { ...game, guesses: [...game.guesses, { type: 'key', key, hit }] }
   const guessed = guessedKeys(next)
   return settle(next, view.answer.every((t) => isRevealed(t, guessed)))

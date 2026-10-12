@@ -1,12 +1,24 @@
-import type { Pool, Settings } from '../game/run'
+import type { Pool } from '../game/pools'
+import type { Settings } from '../game/run'
 
-export const POOL_INFO: Record<string, { label: string; note: string }> = {
-  '500': { label: 'Top 500', note: 'Staples in almost every deck' },
-  '2000': { label: 'Top 2,000', note: 'Popular Commander cards' },
-  '10000': { label: 'Top 10,000', note: 'Deep cuts, still EDHREC-ranked' },
-  all: { label: 'Any card', note: 'Every card ever printed, at random' },
-  qa: { label: 'QA: special frames', note: 'Takes turns through every special card frame' },
+const LABELS: Record<string, string> = {
+  '500': 'Top 500',
+  '2000': 'Top 2,000',
+  '10000': 'Top 10,000',
+  all: 'Any card',
+  legends: 'Legendary creatures',
+  qa: 'QA: special frames',
+  standard: 'Standard',
+  'standard-staples': 'Standard staples',
+  pioneer: 'Pioneer',
+  'pioneer-staples': 'Pioneer staples',
+  modern: 'Modern',
+  'modern-staples': 'Modern staples',
 }
 
-export const poolLabel = (pool: Pool) => POOL_INFO[String(pool)].label
-export const settingsLabel = (s: Settings) => `${poolLabel(s.pool)}${s.hard ? ' · Hard' : ''}`
+export function poolLabel(pool: Pool, setName?: string): string {
+  if (typeof pool === 'string' && pool.startsWith('set:')) return setName ?? pool.slice(4)
+  return LABELS[String(pool)]
+}
+
+export const settingsLabel = (s: Settings) => `${poolLabel(s.pool, s.setName)}${s.hard ? ' · Hard' : ''}`

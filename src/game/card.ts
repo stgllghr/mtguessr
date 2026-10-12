@@ -24,6 +24,10 @@ export type Card = Face & {
   id: string // Scryfall id
   lay?: Exclude<Layout, 'normal'>
   x?: Face[] // the other faces, in printed order
+  s?: string // set code of the printing, e.g. "WOE"
+  cn?: string // collector number
+  ry?: string // rarity letter: C, U, R, M, S (special) or B (bonus)
+  g?: string // formats it's legal in: s = Standard, p = Pioneer, m = Modern
 }
 
 export const facesOf = (card: Card): Face[] => [card, ...(card.x ?? [])]

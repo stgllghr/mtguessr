@@ -51,6 +51,18 @@ describe('toCompact', () => {
   })
 })
 
+describe('toCompact printing and formats', () => {
+  it('keeps the set code, collector number and rarity letter of the printing', () => {
+    expect(toCompact(sample['Llanowar Elves'])).toMatchObject({ s: 'FDN', cn: '227', ry: 'C' })
+    expect(toCompact(sample['Jace, the Mind Sculptor'])).toMatchObject({ s: '2XM', cn: '56', ry: 'M' })
+  })
+  it('lists the formats a card is legal in as letters (s = Standard, p = Pioneer, m = Modern)', () => {
+    expect(toCompact(sample['Llanowar Elves']).g).toBe('spm')
+    expect(toCompact(sample['Jace, the Mind Sculptor']).g).toBe('m')
+    expect('g' in toCompact(sample['Fire // Ice'])).toBe(false)
+  })
+})
+
 describe('toCompact layouts', () => {
   it('keeps both halves of a split card, each with its own colors', () => {
     const c = toCompact(sample['Fire // Ice'])
