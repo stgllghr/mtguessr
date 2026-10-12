@@ -3,7 +3,7 @@
 import { useEffect, useState, type MouseEvent } from 'react'
 import { imageUrl, isTwoSided, type Card } from '../game/card'
 import type { CardView } from '../game/cardGame'
-import { CardBack, FaceFrame, InfoLine, Stats } from './frames'
+import { CardBack, FaceFrame, InfoLine, Legal, Stats } from './frames'
 import { MaskContext } from './TokenText'
 
 // Card tools shouldn't keep focus, or Enter would press them instead of naming the card.
@@ -39,6 +39,7 @@ function Side({ card, view, index, hard, over }: { card: Card; view: CardView; i
         </div>
         {cardStats && <Stats face={face} />}
         <InfoLine info={view.info} face={face} />
+        <Legal />
       </div>
       {!failed && (
         <img

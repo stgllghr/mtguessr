@@ -160,6 +160,11 @@ export function InfoLine({ info, face }: { info: Info | null; face: FaceView }) 
   )
 }
 
+/** The copyright line printed at the bottom right of every Magic card. */
+export function Legal() {
+  return <div className="legal">™ &amp; © Wizards of the Coast</div>
+}
+
 /** Which art an art box shows: the front or back art crop, and the slice of its width
  * (split and aftermath cards have both halves' art side by side in one image). */
 type ArtSpec = { side: 'front' | 'back'; from: number; to: number; key: string }

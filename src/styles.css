@@ -631,16 +631,12 @@ a {
   object-fit: cover;
   border-radius: 4.7% / 3.4%;
   opacity: 0;
-  filter: blur(8px) brightness(1.6);
   pointer-events: none;
-  transition:
-    opacity 900ms ease,
-    filter 1300ms ease;
+  transition: opacity 900ms ease;
 }
 
 .real.developed {
   opacity: 1;
-  filter: none;
 }
 
 .card-tools {
@@ -950,11 +946,23 @@ a {
   box-shadow: none;
 }
 
+/* Bottom-right copyright line, as printed on real cards. */
+.legal {
+  position: absolute;
+  right: 6cqw;
+  bottom: 1.2cqw;
+  color: #ece4d6;
+  font-family: var(--ui);
+  font-size: 2.2cqw;
+  white-space: nowrap;
+  opacity: 0.85;
+}
+
 /* Bottom-left info, as on modern cards: "U 0221" over "WOE • ✎ Artist". */
 .info {
   position: absolute;
   left: 6cqw;
-  right: 26cqw;
+  right: 36cqw;
   bottom: 0.9cqw;
   overflow: hidden;
   color: #ece4d6;

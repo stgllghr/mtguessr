@@ -202,6 +202,10 @@ export function StartScreen({ qa, settings, onSettings, count, bests, saved, bus
           <li>Guess letters, numbers and mana symbols to fill in the blanks across the whole card.</li>
           <li>Every guess costs one of your {MAX_TRIES} tries, including guessing the name.</li>
           <li>
+            An art hint (experimental) reveals a small square of the art for 3 tries. The full card, with its artist,
+            is shown when the card ends.
+          </li>
+          <li>
             Handle the card like a real one: Rotate it to read split cards and battles, which are printed sideways, and
             check the other side for double-faced cards, which have blanks on the back too.
           </li>
