@@ -1,16 +1,19 @@
 // Masked card frames, one per printed layout. Every size is in cqw (card widths), so the
 // frames scale with the card, and rotated parts reuse the same pieces.
 import { useContext, type CSSProperties, type ReactNode } from 'react'
-import type { Face } from '../game/card'
+import { hybridPair, type Face } from '../game/card'
 import type { CardView, FaceView, Section } from '../game/cardGame'
 import { MaskContext, TokenText } from './TokenText'
 import { useFit } from './useFit'
 
+/** The frame color classes for a face: one color, gold, a two-tone hybrid, or neutral in hard mode. */
 export function frameOf(face: Face, hard: boolean): string {
-  if (hard) return 'hidden'
-  if (face.c.length > 1) return 'gold'
-  if (face.c.length === 1) return face.c.toLowerCase()
-  return /\bLand\b/.test(face.t) ? 'land' : 'artifact'
+  if (hard) return 'frame-hidden'
+  const hybrid = hybridPair(face)
+  if (hybrid) return `frame-hybrid frame-a-${hybrid[0].toLowerCase()} frame-b-${hybrid[1].toLowerCase()}`
+  if (face.c.length > 1) return 'frame-gold'
+  if (face.c.length === 1) return `frame-${face.c.toLowerCase()}`
+  return /\bLand\b/.test(face.t) ? 'frame-land' : 'frame-artifact'
 }
 
 /** A box whose text shrinks until it stops overflowing, like printed cards do. */
@@ -127,7 +130,7 @@ export function Artist({ face }: { face: FaceView }) {
 
 /** A single upright face. `inset` puts an adventure/prepared spell panel in the text box. */
 function Upright({ face, hard, inset }: { face: FaceView; hard: boolean; inset?: { face: FaceView; side: 'left' | 'right' } }) {
-  const frame = `frame frame-${frameOf(face.face, hard)} kind-${face.kind}`
+  const frame = `frame ${frameOf(face.face, hard)} kind-${face.kind}`
   if (face.kind === 'saga' || face.kind === 'class') {
     return (
       <div className={frame}>
@@ -143,7 +146,7 @@ function Upright({ face, hard, inset }: { face: FaceView; hard: boolean; inset?:
   }
   // The spell panel has its own frame color: a black creature can carry a red adventure.
   const panel = inset && (
-    <div className={`inset frame-${frameOf(inset.face.face, hard)}`}>
+    <div className={`inset ${frameOf(inset.face.face, hard)}`}>
       <div className="bar name-bar inset-bar">
         <Fit axis="x" min={0.4} className="name">
           <TokenText tokens={inset.face.name} />
@@ -228,7 +231,7 @@ export function FaceFrame({ view, index, hard }: { view: CardView; index: number
       </div>
     )
     return (
-      <div className={`frame frame-${frameOf(face.face, hard)} flip-frame`}>
+      <div className={`frame ${frameOf(face.face, hard)} flip-frame`}>
         {half(face)}
         <div className="art" />
         <div className="upside-down">{half(other)}</div>
@@ -243,7 +246,7 @@ export function FaceFrame({ view, index, hard }: { view: CardView; index: number
   if (face.kind === 'battle') {
     return (
       <Sideways turn={-90} width={INNER_H} height={INNER_W}>
-        <div className={`frame frame-${frameOf(face.face, hard)} battle-frame`}>
+        <div className={`frame ${frameOf(face.face, hard)} battle-frame`}>
           <NameBar face={face} />
           <div className="art" />
           <TypeBar face={face} />

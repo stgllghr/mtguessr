@@ -596,6 +596,35 @@ a {
 .frame-land { --frame: #86684e; --bar: #e0d0bd; --box: #f0e8de; }
 .frame-hidden { --frame: #7a736b; --bar: #d3cdc5; --box: #ece8e2; }
 
+/* Two-tone hybrid frames ({G/W}): each color's palette, blended left to right. The --*-fill
+   gradients are reset on every single-color frame so a panel inside a hybrid card keeps
+   its own color. --frame/--bar/--box stay plain colors (the blend) for color-mix. */
+.frame-w, .frame-u, .frame-b, .frame-r, .frame-g, .frame-gold, .frame-artifact, .frame-land, .frame-hidden {
+  --frame-fill: initial;
+  --bar-fill: initial;
+  --box-fill: initial;
+}
+
+.frame-a-w { --frame-a: #d9d2bd; --bar-a: #f4efe1; --box-a: #f8f5ec; }
+.frame-a-u { --frame-a: #2a69a8; --bar-a: #c4d9ee; --box-a: #e3ecf5; }
+.frame-a-b { --frame-a: #3c3634; --bar-a: #c7beba; --box-a: #e5e0dd; }
+.frame-a-r { --frame-a: #c0482f; --bar-a: #f2cdbd; --box-a: #f7e6de; }
+.frame-a-g { --frame-a: #2e6d45; --bar-a: #c6dcc4; --box-a: #e6efe3; }
+.frame-b-w { --frame-b: #d9d2bd; --bar-b: #f4efe1; --box-b: #f8f5ec; }
+.frame-b-u { --frame-b: #2a69a8; --bar-b: #c4d9ee; --box-b: #e3ecf5; }
+.frame-b-b { --frame-b: #3c3634; --bar-b: #c7beba; --box-b: #e5e0dd; }
+.frame-b-r { --frame-b: #c0482f; --bar-b: #f2cdbd; --box-b: #f7e6de; }
+.frame-b-g { --frame-b: #2e6d45; --bar-b: #c6dcc4; --box-b: #e6efe3; }
+
+.frame-hybrid {
+  --frame: color-mix(in srgb, var(--frame-a), var(--frame-b));
+  --bar: color-mix(in srgb, var(--bar-a), var(--bar-b));
+  --box: color-mix(in srgb, var(--box-a), var(--box-b));
+  --frame-fill: linear-gradient(90deg, var(--frame-a) 30%, var(--frame-b) 70%);
+  --bar-fill: linear-gradient(90deg, var(--bar-a) 25%, var(--bar-b) 75%);
+  --box-fill: linear-gradient(90deg, var(--box-a) 25%, var(--box-b) 75%);
+}
+
 .face {
   padding: 4.2cqw 4.2cqw 7.5cqw;
   background: #0d0b09;
@@ -617,7 +646,7 @@ a {
   border-radius: 2.4cqw 2.4cqw 1.2cqw 1.2cqw;
   background:
     linear-gradient(160deg, rgba(255, 255, 255, 0.18), transparent 40%, rgba(0, 0, 0, 0.18)),
-    var(--frame);
+    var(--frame-fill, var(--frame));
 }
 
 .bar {
@@ -628,7 +657,7 @@ a {
   min-height: 8.4cqw;
   padding: 0.8cqw 2.4cqw;
   border-radius: 1.6cqw / 50%;
-  background: linear-gradient(180deg, var(--bar), color-mix(in srgb, var(--bar) 82%, var(--frame)));
+  background: var(--bar-fill, linear-gradient(180deg, var(--bar), color-mix(in srgb, var(--bar) 82%, var(--frame))));
   box-shadow:
     0 0 0 0.45cqw rgba(0, 0, 0, 0.55),
     0 0.6cqw 0.8cqw rgba(0, 0, 0, 0.3);
@@ -691,7 +720,7 @@ a {
   flex-direction: column;
   justify-content: safe center;
   gap: 1.6cqw;
-  background: var(--box);
+  background: var(--box-fill, var(--box));
   box-shadow: inset 0 0 0 0.35cqw rgba(0, 0, 0, 0.25);
   font-family: var(--rules);
   font-size: calc(4.3cqw * var(--fit, 1));

@@ -28,6 +28,16 @@ export type Card = Face & {
 
 export const facesOf = (card: Card): Face[] => [card, ...(card.x ?? [])]
 
+/** The two colors of a hybrid frame, left then right, or null. A face gets one when it is
+ * exactly two colors and every colored mana symbol is a two-color hybrid ({G/W}). */
+export function hybridPair(face: Face): [string, string] | null {
+  if (face.c.length !== 2) return null
+  const colored = (face.m.match(/\{[^}]+\}/g) ?? []).filter((s) => /[WUBRG]/.test(s))
+  if (colored.length === 0 || !colored.every((s) => /^\{[WUBRG]\/[WUBRG]\}$/.test(s))) return null
+  const [a, b] = colored[0].slice(1, -1).split('/')
+  return [a, b]
+}
+
 /** The only name that counts: the front face, or both halves of a split card. */
 export const answerName = (card: Card) => (card.lay === 'split' || card.lay === 'aftermath' ? (card.full ?? card.n) : card.n)
 
