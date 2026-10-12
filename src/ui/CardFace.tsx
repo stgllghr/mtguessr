@@ -1,7 +1,7 @@
 // The card in play: masked faces you can rotate and turn over, like a card in your hand.
 // When the card ends, each side's blanks fill in and then develop into the real Scryfall image.
 import { useEffect, useState, type MouseEvent } from 'react'
-import { imageUrl, type Card } from '../game/card'
+import { imageUrl, isTwoSided, type Card } from '../game/card'
 import type { CardView } from '../game/cardGame'
 import { Artist, CardBack, FaceFrame, Stats } from './frames'
 import { MaskContext } from './TokenText'
@@ -54,7 +54,7 @@ function Side({ card, view, index, hard, over }: { card: Card; view: CardView; i
 export function CardFace({ card, view, guessed, fresh, hard, over }: Props) {
   const [turns, setTurns] = useState(0)
   const [flipped, setFlipped] = useState(false)
-  const twoSided = view.layout === 'dfc' && view.faces.length > 1
+  const twoSided = isTwoSided(view.layout) && view.faces.length > 1
   const sideways = turns % 2 === 1
 
   return (

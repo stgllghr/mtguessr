@@ -65,10 +65,10 @@ describe('toCompact layouts', () => {
   })
   it('keeps the back face of double-faced cards with its own colors', () => {
     const delver = toCompact(sample['Delver of Secrets // Insectile Aberration'])
-    expect(delver.lay).toBe('dfc')
+    expect(delver.lay).toBe('transform')
     expect(delver.x[0]).toMatchObject({ n: 'Insectile Aberration', c: 'U', p: '3', th: '2' })
     const mdfc = toCompact(sample.mdfc)
-    expect(mdfc.lay).toBe('dfc')
+    expect(mdfc.lay).toBe('mdfc')
     expect(mdfc.x[0]).toMatchObject({ n: 'Witch-Blessed Meadow', t: 'Land', c: '' })
   })
   it('keeps adventure, prepared and flip second halves in the card colors', () => {

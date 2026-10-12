@@ -13,7 +13,10 @@ export type Face = {
   c: string // frame colors in WUBRG order, "" for colorless
 }
 
-export type Layout = 'normal' | 'split' | 'aftermath' | 'adventure' | 'prepare' | 'dfc' | 'flip'
+export type Layout = 'normal' | 'split' | 'aftermath' | 'adventure' | 'prepare' | 'mdfc' | 'transform' | 'flip'
+
+/** Cards with a second printed face on the back. */
+export const isTwoSided = (layout: Layout) => layout === 'mdfc' || layout === 'transform'
 
 export type Card = Face & {
   full?: string // full name for multi-face cards, e.g. "A // B"

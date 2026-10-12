@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Card } from './card'
-import { applyGuess, bestKey, currentCard, isRun, nextCard, poolSize, recordBest, shuffleOrder, startRun, type Run } from './run'
+import { applyGuess, bestKey, currentCard, isRun, nextCard, poolSize, recordBest, revealCard, shuffleOrder, skipCard, startRun, type Run } from './run'
 import { load, save } from './storage'
 
 const cards: Card[] = Array.from({ length: 30 }, (_, i) => ({ n: `Card ${String.fromCharCode(65 + (i % 26))}${i}`, m: '', t: 'Instant', o: '', c: '', id: `id${i}` }))
@@ -74,6 +74,43 @@ describe('runs', () => {
     expect(isRun(startRun(settings, 1))).toBe(true)
     expect(isRun(null)).toBe(false)
     expect(isRun({ settings: { pool: 3, hard: false }, seed: 1, index: 0, streak: 0, game: { guesses: [], status: 'playing' } })).toBe(false)
+  })
+})
+
+describe('QA runs', () => {
+  const special: Card[] = [
+    ...cards.slice(0, 5),
+    { n: 'Gollum', m: '', t: 'Creature', o: '', c: '', id: 'a', lay: 'adventure' },
+    { n: 'Fire', m: '', t: 'Instant', o: '', c: '', id: 's', lay: 'split' },
+    { n: 'Liliana', m: '', t: 'Legendary Planeswalker — Liliana', o: '', c: '', id: 'p' },
+  ]
+  const qa = { pool: 'qa' as const, hard: false }
+
+  it('only draws cards with special frames', () => {
+    let run = startRun(qa, 3)
+    const seen: string[] = []
+    for (let i = 0; i < 3; i++) {
+      seen.push(currentCard(run, special).n)
+      run = skipCard(run, special)
+    }
+    expect(seen.sort()).toEqual(['Fire', 'Gollum', 'Liliana'])
+    expect(poolSize('qa', special)).toBe(3)
+  })
+
+  it('can skip or reveal a card without ending the run', () => {
+    const run = startRun(qa, 3)
+    const revealed = revealCard(run)
+    expect(revealed.game.status).toBe('lost')
+    expect(revealCard(revealed)).toBe(revealed)
+    const skipped = skipCard(revealed, special)
+    expect(skipped.index).toBe(1)
+    expect(skipped.game).toEqual({ guesses: [], status: 'playing' })
+  })
+
+  it('never records a best streak and is a valid saved run', () => {
+    const run = { ...startRun(qa, 1), streak: 5 }
+    expect(recordBest({}, run)).toEqual({})
+    expect(isRun(run)).toBe(true)
   })
 })
 

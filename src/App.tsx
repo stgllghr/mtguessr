@@ -9,13 +9,17 @@ import {
   isRun,
   newSeed,
   nextCard,
+  poolSize,
   recordBest,
+  revealCard,
+  skipCard,
   startRun,
   type Bests,
   type Pool,
   type Run,
   type Settings,
 } from './game/run'
+import { qaCategory } from './game/qa'
 import { load, save } from './game/storage'
 import { charKey } from './game/tokens'
 import { CardFace } from './ui/CardFace'
@@ -25,6 +29,12 @@ import { Keyboard } from './ui/Keyboard'
 import { settingsLabel } from './ui/labels'
 import { NameGuess } from './ui/NameGuess'
 import { StartScreen } from './ui/StartScreen'
+
+// QA mode (only cards with special frames) is offered behind a hidden link: add ?qa to the address.
+const QA = typeof location !== 'undefined' && new URLSearchParams(location.search).has('qa')
+const CHOOSABLE: readonly Pool[] = QA ? [...POOLS, 'qa'] : POOLS
+// Every card is needed for the full catalog, and for QA (rare frames are mostly outside the top 10,000).
+const needsAllCards = (pool: Pool) => pool === 'all' || pool === 'qa'
 
 const KEYS = { settings: 'spellify-endless:settings', bests: 'spellify-endless:bests', run: 'spellify-endless:run' }
 
@@ -36,12 +46,12 @@ async function fetchCards(file: string): Promise<Card[]> {
 
 function loadSettings(): Settings {
   const s = load<Partial<Settings> | null>(KEYS.settings, null)
-  return s && POOLS.includes(s.pool as Pool) && typeof s.hard === 'boolean' ? (s as Settings) : { pool: 500, hard: false }
+  return s && CHOOSABLE.includes(s.pool as Pool) && typeof s.hard === 'boolean' ? (s as Settings) : { pool: 500, hard: false }
 }
 
 function loadRun(): Run | null {
   const r = load<unknown>(KEYS.run, null)
-  return isRun(r) ? r : null
+  return isRun(r) && CHOOSABLE.includes(r.settings.pool) ? r : null
 }
 
 export default function App() {
@@ -78,13 +88,13 @@ export default function App() {
   }, [])
 
   const allCards = useMemo(() => (top && rest ? top.concat(rest) : null), [top, rest])
-  const cards = run ? (run.settings.pool === 'all' ? allCards : top) : null
+  const cards = run ? (needsAllCards(run.settings.pool) ? allCards : top) : null
   const card = run && cards ? currentCard(run, cards) : null
   const view = useMemo(() => (card ? buildView(card) : null), [card])
 
   // A saved "Any card" run needs the full list before it can show its card.
   useEffect(() => {
-    if (screen === 'play' && run?.settings.pool === 'all' && !rest) loadRest().catch(() => {})
+    if (screen === 'play' && run && needsAllCards(run.settings.pool) && !rest) loadRest().catch(() => {})
   }, [screen, run?.settings.pool, rest, loadRest])
 
   // Card data changed under a saved run (e.g. after refreshing the snapshot): start over.
@@ -104,7 +114,7 @@ export default function App() {
 
   const begin = async (s: Settings) => {
     setSettings(s)
-    if (s.pool === 'all') {
+    if (needsAllCards(s.pool)) {
       setBusy(true)
       try {
         await loadRest()
@@ -124,6 +134,7 @@ export default function App() {
     [cards],
   )
   const next = useCallback(() => setRun((r) => (r && cards ? nextCard(r, cards) : r)), [cards])
+  const skip = useCallback(() => setRun((r) => (r && cards ? skipCard(r, cards) : r)), [cards])
   const status = run?.game.status
 
   // Physical keyboard: type to guess, Enter to name the card / continue.
@@ -136,6 +147,7 @@ export default function App() {
         e.preventDefault()
         if (status === 'playing') setNaming(true)
         else if (status === 'won') next()
+        else if (run.settings.pool === 'qa') skip()
         else begin(run.settings)
         return
       }
@@ -156,6 +168,7 @@ export default function App() {
   if (screen === 'start' || !run) {
     return (
       <StartScreen
+        pools={CHOOSABLE}
         settings={settings}
         onSettings={setSettings}
         bests={bests}
@@ -175,6 +188,7 @@ export default function App() {
   const last = run.game.guesses.at(-1)
   const fresh = last?.type === 'key' && last.hit ? last.key : null
   const over = run.game.status !== 'playing'
+  const qa = run.settings.pool === 'qa'
 
   return (
     <div className="play">
@@ -182,16 +196,37 @@ export default function App() {
         <button type="button" className="wordmark" onClick={() => setScreen('start')} aria-label="Back to the start screen">
           Spellify <span>Endless</span>
         </button>
-        <p className="run-meta">
-          <span className="run-mode">{settingsLabel(run.settings)}</span>
-          <span className="run-streak">
-            Streak <strong>{run.streak}</strong>
-          </span>
-          <span className="run-best">
-            Best <strong>{bests[bestKey(run.settings)] ?? 0}</strong>
-          </span>
-        </p>
+        {qa ? (
+          <p className="run-meta">
+            <span className="run-mode">{run.settings.hard ? 'QA · Hard' : 'QA'}</span>
+            <span>
+              Card <strong>{run.index + 1}</strong> of {poolSize('qa', cards!).toLocaleString()}
+            </span>
+          </p>
+        ) : (
+          <p className="run-meta">
+            <span className="run-mode">{settingsLabel(run.settings)}</span>
+            <span className="run-streak">
+              Streak <strong>{run.streak}</strong>
+            </span>
+            <span className="run-best">
+              Best <strong>{bests[bestKey(run.settings)] ?? 0}</strong>
+            </span>
+          </p>
+        )}
       </header>
+
+      {qa && (
+        <div className="qa-bar">
+          <span className="qa-frame">{qaCategory(card)}</span>
+          <button type="button" className="tool" onMouseDown={(e) => e.preventDefault()} onClick={() => setRun((r) => (r ? revealCard(r) : r))} disabled={over}>
+            Reveal
+          </button>
+          <button type="button" className="tool" onMouseDown={(e) => e.preventDefault()} onClick={skip}>
+            Skip
+          </button>
+        </div>
+      )}
 
       <main className="stage">
         <CardFace key={`${run.seed}:${run.index}`} card={card} view={view} guessed={guessed} fresh={fresh} hard={run.settings.hard} over={over} />
@@ -205,7 +240,8 @@ export default function App() {
             game={run.game}
             streak={run.streak}
             best={bests[bestKey(run.settings)] ?? 0}
-            onNext={next}
+            qa={qa}
+            onNext={qa ? skip : next}
             onPlayAgain={() => begin(run.settings)}
             onMenu={() => setScreen('start')}
           />

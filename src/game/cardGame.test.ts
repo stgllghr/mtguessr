@@ -28,7 +28,7 @@ const elves: Card = {
 }
 const jace: Card = { n: 'Jace, the Mind Sculptor', m: '{2}{U}{U}', t: 'Legendary Planeswalker — Jace', o: '+2: Look.', l: '3', c: 'U', id: 'x' }
 const delver: Card = {
-  n: 'Delver of Secrets', full: 'Delver of Secrets // Insectile Aberration', m: '{U}', t: 'Creature — Human Wizard', o: '', c: 'U', id: 'y', lay: 'dfc',
+  n: 'Delver of Secrets', full: 'Delver of Secrets // Insectile Aberration', m: '{U}', t: 'Creature — Human Wizard', o: '', c: 'U', id: 'y', lay: 'transform',
   x: [{ n: 'Insectile Aberration', m: '', t: 'Creature — Human Insect', o: 'Flying', p: '3', th: '2', c: 'U' }],
 }
 const fireIce: Card = {
@@ -133,7 +133,7 @@ describe('guessName', () => {
 describe('multi-face cards', () => {
   it('has a view for every face', () => {
     const v = buildView(delver)
-    expect(v.layout).toBe('dfc')
+    expect(v.layout).toBe('transform')
     expect(v.faces.map((f) => shown(f.name, newCardGame()))).toEqual(['______ __ _______', '_________ __________'])
     expect(buildView(elves).layout).toBe('normal')
   })

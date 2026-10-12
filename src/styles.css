@@ -348,8 +348,8 @@ a {
   min-height: 100dvh;
   margin: 0 auto;
   padding: 0 16px max(12px, env(safe-area-inset-bottom));
-  display: grid;
-  grid-template-rows: auto 1fr auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .topbar {
@@ -395,9 +395,31 @@ a {
 }
 
 .stage {
+  flex: 1;
   display: grid;
   place-items: center;
   padding: 4px 0 10px;
+}
+
+/* QA mode: which frame is up, plus Reveal and Skip. */
+.qa-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.qa-frame {
+  flex: 1;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 18px;
+  color: var(--ember);
+}
+
+.tool:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 /* ---------- The card ---------- */

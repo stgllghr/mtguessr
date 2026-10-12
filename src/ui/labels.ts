@@ -5,6 +5,7 @@ export const POOL_INFO: Record<string, { label: string; note: string }> = {
   '2000': { label: 'Top 2,000', note: 'Popular Commander cards' },
   '10000': { label: 'Top 10,000', note: 'Deep cuts, still EDHREC-ranked' },
   all: { label: 'Any card', note: 'Every card ever printed, at random' },
+  qa: { label: 'QA: special frames', note: 'Takes turns through every special card frame' },
 }
 
 export const poolLabel = (pool: Pool) => POOL_INFO[String(pool)].label

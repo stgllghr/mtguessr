@@ -1,24 +1,27 @@
 // Shown in place of the keyboard once a card is solved or the tries run out.
 import { edhrecUrl, scryfallUrl, type Card } from '../game/card'
-import type { CardGame } from '../game/cardGame'
+import { triesLeft, type CardGame } from '../game/cardGame'
 
 type Props = {
   card: Card
   game: CardGame
   streak: number
   best: number
+  qa?: boolean // QA runs never end: every card moves on to the next
   onNext: () => void
   onPlayAgain: () => void
   onMenu: () => void
 }
 
-export function EndOfCard({ card, game, streak, best, onNext, onPlayAgain, onMenu }: Props) {
+export function EndOfCard({ card, game, streak, best, qa, onNext, onPlayAgain, onMenu }: Props) {
   const used = game.guesses.length
   const won = game.status === 'won'
   const name = card.full ?? card.n
   return (
     <section className={`end ${won ? 'end-won' : 'end-lost'}`} aria-live="polite">
-      <p className="end-kicker">{won ? `Solved in ${used} ${used === 1 ? 'try' : 'tries'}` : 'Out of tries'}</p>
+      <p className="end-kicker">
+        {won ? `Solved in ${used} ${used === 1 ? 'try' : 'tries'}` : triesLeft(game) > 0 ? 'Revealed' : 'Out of tries'}
+      </p>
       <h2 className="end-name">{name}</h2>
       <p className="end-links">
         <a href={edhrecUrl(card)} target="_blank" rel="noreferrer">
@@ -28,7 +31,7 @@ export function EndOfCard({ card, game, streak, best, onNext, onPlayAgain, onMen
           Scryfall
         </a>
       </p>
-      {won ? (
+      {won || qa ? (
         <div className="end-actions">
           <button type="button" className="btn btn-primary btn-wide" onClick={onNext} autoFocus>
             Next card

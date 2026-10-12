@@ -1,7 +1,7 @@
 // Title, pool and mode choice, best streak, and Play / Continue.
 import { useEffect, useState } from 'react'
 import { MAX_TRIES } from '../game/cardGame'
-import { POOLS, bestKey, type Bests, type Run, type Settings } from '../game/run'
+import { bestKey, type Bests, type Pool, type Run, type Settings } from '../game/run'
 import { POOL_INFO, settingsLabel } from './labels'
 
 const TITLE = [...'SPELLIFY']
@@ -31,6 +31,7 @@ function Title() {
 }
 
 type Props = {
+  pools: readonly Pool[]
   settings: Settings
   onSettings: (s: Settings) => void
   bests: Bests
@@ -41,7 +42,7 @@ type Props = {
   onResume: () => void
 }
 
-export function StartScreen({ settings, onSettings, bests, saved, allCount, busy, onPlay, onResume }: Props) {
+export function StartScreen({ pools, settings, onSettings, bests, saved, allCount, busy, onPlay, onResume }: Props) {
   const best = bests[bestKey(settings)] ?? 0
   return (
     <main className="start">
@@ -50,7 +51,7 @@ export function StartScreen({ settings, onSettings, bests, saved, allCount, busy
 
       <fieldset className="pools">
         <legend>Card pool</legend>
-        {POOLS.map((p) => {
+        {pools.map((p) => {
           const info = POOL_INFO[String(p)]
           return (
             <label key={p} className={`pool${settings.pool === p ? ' selected' : ''}`}>
@@ -73,9 +74,13 @@ export function StartScreen({ settings, onSettings, bests, saved, allCount, busy
         </span>
       </label>
 
-      <p className="best">
-        Best streak for {settingsLabel(settings)}: <strong>{best}</strong>
-      </p>
+      {settings.pool === 'qa' ? (
+        <p className="best">QA runs skip the streak: every card moves on to the next, and nothing counts toward best streaks.</p>
+      ) : (
+        <p className="best">
+          Best streak for {settingsLabel(settings)}: <strong>{best}</strong>
+        </p>
+      )}
 
       {saved ? (
         <div className="start-actions">

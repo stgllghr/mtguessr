@@ -1,46 +1,50 @@
 // An endless run: a seeded shuffle of the pool, the current card's game, and the streak.
 import type { Card } from './card'
 import { buildView, guessKey, guessName, newCardGame, type CardGame } from './cardGame'
+import { qaCategory, qaOrder } from './qa'
+import { seededShuffle } from './random'
 
+/** The pools players choose from. QA ('qa') is only offered behind the ?qa link. */
 export const POOLS = [500, 2000, 10000, 'all'] as const
-export type Pool = (typeof POOLS)[number]
+export type Pool = (typeof POOLS)[number] | 'qa'
+const ALL_POOLS: readonly Pool[] = [...POOLS, 'qa']
+
 export type Settings = { pool: Pool; hard: boolean }
 export type Run = { settings: Settings; seed: number; index: number; streak: number; game: CardGame }
 export type Bests = Record<string, number>
 
-function mulberry32(seed: number) {
-  let a = seed >>> 0
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0
-    let t = a
-    t = Math.imul(t ^ (t >>> 15), t | 1)
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
-}
+let cachedOrder: { key: string; order: number[] } | null = null
 
-let cachedOrder: { n: number; seed: number; order: number[] } | null = null
+function cached(key: string, build: () => number[]): number[] {
+  if (cachedOrder?.key !== key) cachedOrder = { key, order: build() }
+  return cachedOrder.order
+}
 
 export function shuffleOrder(n: number, seed: number): number[] {
-  if (cachedOrder && cachedOrder.n === n && cachedOrder.seed === seed) return cachedOrder.order
-  const order = Array.from({ length: n }, (_, i) => i)
-  const rand = mulberry32(seed)
-  for (let i = n - 1; i > 0; i--) {
-    const j = Math.floor(rand() * (i + 1))
-    ;[order[i], order[j]] = [order[j], order[i]]
-  }
-  cachedOrder = { n, seed, order }
-  return order
+  return cached(`${n}:${seed}`, () =>
+    seededShuffle(
+      Array.from({ length: n }, (_, i) => i),
+      seed,
+    ),
+  )
 }
 
-export const poolSize = (pool: Pool, cards: Card[]) => (pool === 'all' ? cards.length : Math.min(pool, cards.length))
+function orderFor(pool: Pool, cards: Card[], seed: number): number[] {
+  if (pool === 'qa') return cached(`qa:${cards.length}:${seed}`, () => qaOrder(cards, seed))
+  return shuffleOrder(poolSize(pool, cards), seed)
+}
+
+export function poolSize(pool: Pool, cards: Card[]): number {
+  if (pool === 'qa') return cards.filter(qaCategory).length
+  return pool === 'all' ? cards.length : Math.min(pool, cards.length)
+}
 
 export const newSeed = () => Math.floor(Math.random() * 2 ** 31)
 
 export const startRun = (settings: Settings, seed: number): Run => ({ settings, seed, index: 0, streak: 0, game: newCardGame() })
 
 export function currentCard(run: Run, cards: Card[]): Card {
-  return cards[shuffleOrder(poolSize(run.settings.pool, cards), run.seed)[run.index]]
+  return cards[orderFor(run.settings.pool, cards, run.seed)[run.index]]
 }
 
 export function applyGuess(run: Run, cards: Card[], guess: { key: string } | { name: string }): Run {
@@ -51,8 +55,8 @@ export function applyGuess(run: Run, cards: Card[], guess: { key: string } | { n
   return { ...run, game, streak: justWon ? run.streak + 1 : run.streak }
 }
 
-export function nextCard(run: Run, cards: Card[]): Run {
-  if (run.game.status !== 'won') return run
+/** Moves on to the next card, reshuffling after the last card in the pool. */
+export function skipCard(run: Run, cards: Card[]): Run {
   const atEnd = run.index + 1 >= poolSize(run.settings.pool, cards)
   return {
     ...run,
@@ -62,9 +66,20 @@ export function nextCard(run: Run, cards: Card[]): Run {
   }
 }
 
+/** The next card of a run, once the current one is solved. */
+export function nextCard(run: Run, cards: Card[]): Run {
+  return run.game.status === 'won' ? skipCard(run, cards) : run
+}
+
+/** QA: end the current card and show its answer, without using up tries. */
+export function revealCard(run: Run): Run {
+  return run.game.status === 'playing' ? { ...run, game: { ...run.game, status: 'lost' } } : run
+}
+
 export const bestKey = (s: Settings) => `${s.pool}:${s.hard ? 'hard' : 'normal'}`
 
 export function recordBest(bests: Bests, run: Run): Bests {
+  if (run.settings.pool === 'qa') return bests
   const key = bestKey(run.settings)
   return run.streak > (bests[key] ?? 0) ? { ...bests, [key]: run.streak } : bests
 }
@@ -74,7 +89,7 @@ export function isRun(x: unknown): x is Run {
   return (
     !!r &&
     typeof r === 'object' &&
-    POOLS.includes(r.settings?.pool) &&
+    ALL_POOLS.includes(r.settings?.pool) &&
     typeof r.settings.hard === 'boolean' &&
     Number.isInteger(r.seed) &&
     Number.isInteger(r.index) &&

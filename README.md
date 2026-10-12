@@ -24,6 +24,14 @@ npm run dev
 
 Open http://localhost:5173. For a production build served locally: `npm run build && npm run preview`.
 
+## QA mode
+
+Add `?qa` to the address (for example http://localhost:5173/?qa) and a **QA: special frames**
+pool appears on the start screen. It takes turns through every special card frame
+(adventure, prepared, split, battle, MDFC, aftermath, transform, flip, saga, class,
+planeswalker), with **Reveal** to compare against the real card and **Skip** to move on.
+Nothing in QA counts toward best streaks.
+
 ## Refresh the card data
 
 The card lists are committed in `public/` (`cards-top.json`, `cards-rest.json`). To rebuild them

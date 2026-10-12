@@ -34,7 +34,7 @@ export function isTopEligible(raw) {
   return raw.legalities?.commander === 'legal' && typeof raw.edhrec_rank === 'number'
 }
 
-const LAYOUTS = { split: 'split', adventure: 'adventure', prepare: 'prepare', transform: 'dfc', modal_dfc: 'dfc', flip: 'flip' }
+const LAYOUTS = { split: 'split', adventure: 'adventure', prepare: 'prepare', transform: 'transform', modal_dfc: 'mdfc', flip: 'flip' }
 
 function layoutOf(raw) {
   if (raw.layout === 'split' && raw.keywords?.includes('Aftermath')) return 'aftermath'

@@ -114,3 +114,13 @@ Card controls, always visible during play:
 
 When a card ends, each side's blanks fill in and then dissolve into the real Scryfall
 image (front image; back image for double-faced cards).
+
+## QA mode (added 2026-10-11)
+
+Hidden behind `?qa` in the address. Adds a **QA: special frames** pool that only draws
+cards with special frames, taking turns in this order so rare frames come up as often as
+common ones: Adventure, Prepared, Split, Battle, MDFC, Aftermath, Transform, Flip, Saga,
+Class, Planeswalker (each type shuffled). The header shows the frame type and position;
+**Reveal** ends the card and shows the real image for comparison; **Skip** moves on. A miss
+never ends a QA run, and QA runs never count toward best streaks. MDFC and transform
+cards are now tagged separately in the data (`mdfc`, `transform`).
