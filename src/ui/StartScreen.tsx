@@ -1,5 +1,5 @@
 // Title, pool and mode choice, best streak, and Play / Continue.
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { MAX_TRIES } from '../game/cardGame'
 import type { Format, Pool } from '../game/pools'
 import { bestKey, type Bests, type Run, type Settings } from '../game/run'
@@ -102,6 +102,11 @@ export function StartScreen({ qa, settings, onSettings, count, bests, saved, bus
   const ready = groupOf(settings.pool) === group
   const best = bests[bestKey(settings)] ?? 0
 
+  // Focus the main button so Enter starts a run, without scrolling the page down to it
+  // (autoFocus would, on any screen shorter than this page).
+  const primary = useRef<HTMLButtonElement>(null)
+  useEffect(() => primary.current?.focus({ preventScroll: true }), [])
+
   const pickGroup = (g: Group) => {
     setGroup(g)
     const first = choices(g)[0]
@@ -179,7 +184,7 @@ export function StartScreen({ qa, settings, onSettings, count, bests, saved, bus
           <button type="button" className="btn" onClick={onPlay} disabled={busy || !ready}>
             New run
           </button>
-          <button type="button" className="btn btn-primary btn-wide" onClick={onResume} disabled={busy} autoFocus>
+          <button type="button" className="btn btn-primary btn-wide" onClick={onResume} disabled={busy} ref={primary}>
             Continue run
             <span className="btn-note">
               Streak {saved.streak} · {settingsLabel(saved.settings)}
@@ -188,7 +193,7 @@ export function StartScreen({ qa, settings, onSettings, count, bests, saved, bus
         </div>
       ) : (
         <div className="start-actions">
-          <button type="button" className="btn btn-primary btn-wide" onClick={onPlay} disabled={busy || !ready} autoFocus>
+          <button type="button" className="btn btn-primary btn-wide" onClick={onPlay} disabled={busy || !ready} ref={primary}>
             {busy ? 'Loading cards…' : 'Play'}
           </button>
         </div>
