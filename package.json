@@ -2,7 +2,11 @@
   "name": "spellify-endless",
   "private": true,
   "version": "0.1.0",
+  "description": "A fan-made endless take on EDHREC's Spellify: name the hidden Magic: The Gathering card.",
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

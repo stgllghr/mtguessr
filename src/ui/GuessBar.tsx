@@ -29,7 +29,17 @@ export function GuessBar({ game, onGuessName, onArtHint }: Props) {
           <span className="life-label">{left === 1 ? 'try left' : 'tries left'}</span>
         </p>
         <div className="tries-actions">
-          <button type="button" className="btn btn-hint" onClick={onArtHint} disabled={!canUseArtHint(game)} onMouseDown={(e) => e.preventDefault()}>
+          <button
+            type="button"
+            className="btn btn-hint"
+            onClick={onArtHint}
+            disabled={!canUseArtHint(game)}
+            onMouseDown={(e) => e.preventDefault()}
+            aria-label={`Art hint (experimental): reveal part of the art for ${ART_HINT_COST} tries`}
+          >
+            <span className="btn-tag" aria-hidden>
+              Experimental
+            </span>
             Art hint
             <span className="btn-note">
               {used >= MAX_ART_HINTS ? 'All used' : `${ART_HINT_COST} tries · ${used}/${MAX_ART_HINTS}`}

@@ -656,6 +656,53 @@ a {
   color: var(--ember);
 }
 
+/* The ⓘ beside the card tools, with its explanation on hover, focus or tap. */
+.note {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--bark-hi);
+  border-radius: 50%;
+  background: var(--bark);
+  color: var(--dust);
+  font-size: 17px;
+  cursor: help;
+}
+
+.note:hover,
+.note:focus-visible {
+  color: var(--parchment);
+}
+
+.note-bubble {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: -8px;
+  z-index: 5;
+  width: min(260px, 80vw);
+  padding: 10px 12px;
+  border: 1px solid var(--bark-hi);
+  border-radius: 10px;
+  background: var(--umber-deep);
+  color: var(--parchment);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.35;
+  text-align: left;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 150ms;
+}
+
+.note:hover .note-bubble,
+.note:focus .note-bubble {
+  opacity: 1;
+  visibility: visible;
+}
+
 /* Our own card back, for cards with nothing printed on the back. */
 .card-back {
   display: grid;
@@ -1307,8 +1354,25 @@ a {
 }
 
 .btn-hint {
+  position: relative;
   min-height: 46px;
   padding: 4px 14px;
+}
+
+/* A small tag on the button's top edge, so it doesn't make the button wider. */
+.btn-tag {
+  position: absolute;
+  top: -8px;
+  right: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--oval);
+  color: var(--parchment);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.4;
 }
 
 .name-glyph {

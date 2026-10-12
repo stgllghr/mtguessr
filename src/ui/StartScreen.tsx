@@ -197,6 +197,10 @@ export function StartScreen({ qa, settings, onSettings, count, bests, saved, bus
             check the other side for double-faced cards, which have blanks on the back too.
           </li>
           <li>Solve the card to keep your streak going. Run out of tries and the run ends.</li>
+          <li>
+            The card’s text is always its current Oracle wording: the official, up-to-date rules text. It can differ from
+            the printed card shown at the end, especially on older cards.
+          </li>
           <li>On a keyboard, type to guess and press Enter to name the card.</li>
         </ul>
       </details>
@@ -204,7 +208,12 @@ export function StartScreen({ qa, settings, onSettings, count, bests, saved, bus
         Card data and images from <a href="https://scryfall.com">Scryfall</a>. Commander popularity from{' '}
         <a href="https://edhrec.com">EDHREC</a>; format staples from{' '}
         <a href="https://www.mtgo.com/decklists">Magic Online tournament results</a>. Inspired by EDHREC's{' '}
-        <a href="https://edhrec.com/games/spellify">Spellify</a>. Not affiliated with Wizards of the Coast.
+        <a href="https://edhrec.com/games/spellify">Spellify</a>; not affiliated with EDHREC or Scryfall.
+      </p>
+      <p className="credits">
+        Spellify Endless is unofficial Fan Content permitted under the{' '}
+        <a href="https://company.wizards.com/en/legal/fancontentpolicy">Fan Content Policy</a>. Not approved/endorsed
+        by Wizards. Portions of the materials used are property of Wizards of the Coast. ©Wizards of the Coast LLC.
       </p>
     </main>
   )

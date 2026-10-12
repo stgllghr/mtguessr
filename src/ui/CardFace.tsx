@@ -52,6 +52,21 @@ function Side({ card, view, index, hard, over }: { card: Card; view: CardView; i
   )
 }
 
+const ORACLE_NOTE =
+  'Card text is always the current Oracle wording, so it can differ from the printed card shown at the end, especially on older cards.'
+
+/** A small ⓘ that explains the card text, on hover, on keyboard focus, or on tap. */
+function OracleNote() {
+  return (
+    <span className="note" tabIndex={0} role="button" aria-label={ORACLE_NOTE}>
+      <span aria-hidden>ⓘ</span>
+      <span className="note-bubble" role="tooltip" aria-hidden>
+        {ORACLE_NOTE}
+      </span>
+    </span>
+  )
+}
+
 export function CardFace({ card, view, guessed, fresh, hard, over, artHints }: Props) {
   const [turns, setTurns] = useState(0)
   const [flipped, setFlipped] = useState(false)
@@ -80,6 +95,7 @@ export function CardFace({ card, view, guessed, fresh, hard, over, artHints }: P
           <button type="button" className="tool" onMouseDown={keepFocus} onClick={() => setFlipped((f) => !f)} aria-pressed={flipped}>
             <span aria-hidden>⇄</span> {flipped ? 'Back to front' : 'Check other side'}
           </button>
+          <OracleNote />
         </div>
       </div>
     </MaskContext.Provider>
