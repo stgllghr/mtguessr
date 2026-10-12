@@ -36,6 +36,11 @@ export function symbolKeys(sym: string): { keys: string[]; all: boolean } {
   return { keys: [], all: false }
 }
 
+// A '-' that starts a number ("-1/-1", "+1/-1", "-X/-X") is a minus sign and stays guessable.
+// Any other '-' is a hyphen ("Jin-Gitaxias", "non-Human", "K-9") and is shown like punctuation.
+const isHyphen = (ch: string, prev: string | undefined, next: string | undefined) =>
+  ch === '-' && !(!/^[A-Za-z0-9]$/.test(prev ?? '') && /^[0-9Xx]$/.test(next ?? ''))
+
 export function tokenize(text: string): Token[] {
   const tokens: Token[] = []
   for (const part of text.split(/(\{[^}]+\})/)) {
@@ -44,10 +49,11 @@ export function tokenize(text: string): Token[] {
       tokens.push({ kind: 'sym', sym: part, ...symbolKeys(part) })
       continue
     }
-    for (const ch of part) {
+    const chars = [...part]
+    chars.forEach((ch, i) => {
       if (ch === '\n') tokens.push({ kind: 'nl' })
-      else tokens.push({ kind: 'char', ch, key: charKey(ch) })
-    }
+      else tokens.push({ kind: 'char', ch, key: isHyphen(ch, chars[i - 1], chars[i + 1]) ? null : charKey(ch) })
+    })
   }
   return tokens
 }

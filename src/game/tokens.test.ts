@@ -60,6 +60,17 @@ describe('tokenize', () => {
     expect(t[3]).toEqual({ kind: 'char', ch: 'A', key: 'A' })
     expect(t[1]).toEqual({ kind: 'char', ch: ':', key: null })
   })
+  it('shows hyphens like other punctuation, but keeps minus signs guessable', () => {
+    const keyOf = (text: string, ch: string) => tokenize(text).find((t) => t.kind === 'char' && t.ch === ch)
+    expect(keyOf('Jin-Gitaxias', '-')).toEqual({ kind: 'char', ch: '-', key: null })
+    expect(keyOf('non-Human', '-')).toEqual({ kind: 'char', ch: '-', key: null })
+    expect(keyOf('a -1/-1 counter', '-')).toEqual({ kind: 'char', ch: '-', key: '-' })
+    expect(keyOf('gets -X/-X', '-')).toEqual({ kind: 'char', ch: '-', key: '-' })
+    expect(keyOf('−2: Draw', '−')).toEqual({ kind: 'char', ch: '−', key: '-' })
+    expect(keyOf('gets +1/-1', '-')).toEqual({ kind: 'char', ch: '-', key: '-' })
+    expect(keyOf('K-9, Mark I', '-')).toEqual({ kind: 'char', ch: '-', key: null })
+    expect(keyOf('Model X-51', '-')).toEqual({ kind: 'char', ch: '-', key: null })
+  })
   it('keeps surrogate pairs and odd characters as single visible tokens', () => {
     expect(tokenize('∞')).toEqual([{ kind: 'char', ch: '∞', key: null }])
   })
