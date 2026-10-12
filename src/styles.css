@@ -815,6 +815,8 @@ a {
 }
 
 .art {
+  position: relative;
+  overflow: hidden;
   flex: 0 0 43%;
   margin: 0 1.6cqw;
   border: 0.5cqw solid rgba(0, 0, 0, 0.6);
@@ -1133,6 +1135,27 @@ a {
   word-spacing: 0.35em;
 }
 
+/* Art hints: the art shows only through the revealed squares. */
+.art-reveal {
+  position: absolute;
+  inset: 0;
+  animation: art-in 500ms ease both;
+}
+
+.art-image {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+}
+
+@keyframes art-in {
+  from {
+    opacity: 0;
+  }
+}
+
 /* Words never break; hidden characters are slots of equal width so length is the only clue. */
 .w {
   white-space: nowrap;
@@ -1230,7 +1253,7 @@ a {
   padding: 0;
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(13, 1fr);
+  grid-template-columns: repeat(13, minmax(0, 1fr));
   gap: 3px;
 }
 
@@ -1259,6 +1282,33 @@ a {
 
 .slot-cell .ms-cost {
   font-size: 13px;
+}
+
+.art-glyph {
+  width: 18px;
+  height: 13px;
+  border: 2px solid currentColor;
+  border-radius: 2px;
+  background: linear-gradient(135deg, transparent 45%, currentColor 45% 55%, transparent 55%);
+}
+
+.slot-cell.art-hint {
+  background: var(--oval);
+  color: var(--parchment);
+}
+
+.tries-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.tries-actions .btn {
+  white-space: nowrap;
+}
+
+.btn-hint {
+  min-height: 46px;
+  padding: 4px 14px;
 }
 
 .name-glyph {
@@ -1561,6 +1611,17 @@ a {
   .slot-cell {
     height: 24px;
     font-size: 12px;
+  }
+  .life-label {
+    font-size: 13px;
+  }
+  .tries-actions {
+    gap: 6px;
+  }
+  .tries-actions .btn {
+    min-height: 42px;
+    padding: 4px 11px;
+    font-size: 15px;
   }
 }
 

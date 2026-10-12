@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { fetchSetPrintings } from './data/scryfall'
 import type { Card } from './game/card'
-import { buildView, guessedKeys, triesLeft } from './game/cardGame'
+import { artHints, buildView, guessedKeys, triesLeft } from './game/cardGame'
 import { fromPrinting, isPool, nameIndex, poolCards, poolNeeds, type Catalog, type Staples } from './game/pools'
 import { qaCategory } from './game/qa'
 import {
@@ -17,6 +17,7 @@ import {
   skipCard,
   startRun,
   type Bests,
+  type GuessInput,
   type Pool,
   type Run,
   type Settings,
@@ -168,7 +169,7 @@ export default function App() {
   }
 
   const guess = useCallback(
-    (g: { key: string } | { name: string }) => setRun((r) => (r && cards ? applyGuess(r, cards, g) : r)),
+    (g: GuessInput) => setRun((r) => (r && cards ? applyGuess(r, cards, g) : r)),
     [cards],
   )
   const next = useCallback(() => setRun((r) => (r && cards ? nextCard(r, cards) : r)), [cards])
@@ -268,11 +269,11 @@ export default function App() {
       )}
 
       <main className="stage">
-        <CardFace key={`${run.seed}:${run.index}`} card={card} view={view} guessed={guessed} fresh={fresh} hard={run.settings.hard} over={over} />
+        <CardFace key={`${run.seed}:${run.index}`} card={card} view={view} guessed={guessed} fresh={fresh} hard={run.settings.hard} over={over} artHints={artHints(run.game)} />
       </main>
 
       <footer className="controls">
-        <GuessBar game={run.game} onGuessName={() => setNaming(true)} />
+        <GuessBar game={run.game} onGuessName={() => setNaming(true)} onArtHint={() => guess({ art: true })} />
         {over ? (
           <EndOfCard
             card={card}

@@ -1,7 +1,7 @@
 // An endless run: a seeded shuffle of the pool's cards, the current card's game, and the streak.
 // Every function takes `cards`: the pool's card list (see pools.ts).
 import type { Card } from './card'
-import { buildView, guessKey, guessName, newCardGame, type CardGame } from './cardGame'
+import { buildView, guessArt, guessKey, guessName, newCardGame, type CardGame } from './cardGame'
 import { isPool, type Pool } from './pools'
 import { qaCategory, qaOrder } from './qa'
 import { seededShuffle } from './random'
@@ -46,9 +46,16 @@ export function currentCard(run: Run, cards: Card[]): Card {
   return cards[orderFor(run.settings.pool, cards, run.seed)[run.index]]
 }
 
-export function applyGuess(run: Run, cards: Card[], guess: { key: string } | { name: string }): Run {
+export type GuessInput = { key: string } | { name: string } | { art: true }
+
+export function applyGuess(run: Run, cards: Card[], guess: GuessInput): Run {
   const card = currentCard(run, cards)
-  const game = 'key' in guess ? guessKey(buildView(card), run.game, guess.key) : guessName(card, run.game, guess.name)
+  const game =
+    'key' in guess
+      ? guessKey(buildView(card), run.game, guess.key)
+      : 'name' in guess
+        ? guessName(card, run.game, guess.name)
+        : guessArt(run.game)
   if (game === run.game) return run
   const justWon = run.game.status === 'playing' && game.status === 'won'
   return { ...run, game, streak: justWon ? run.streak + 1 : run.streak }

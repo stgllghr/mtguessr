@@ -45,8 +45,8 @@ export function hybridPair(face: Face): [string, string] | null {
 /** The only name that counts: the front face, or both halves of a split card. */
 export const answerName = (card: Card) => (card.lay === 'split' || card.lay === 'aftermath' ? (card.full ?? card.n) : card.n)
 
-export const imageUrl = (id: string, side: 'front' | 'back' = 'front') =>
-  `https://cards.scryfall.io/normal/${side}/${id[0]}/${id[1]}/${id}.jpg`
+export const imageUrl = (id: string, side: 'front' | 'back' = 'front', version: 'normal' | 'art_crop' = 'normal') =>
+  `https://cards.scryfall.io/${version}/${side}/${id[0]}/${id[1]}/${id}.jpg`
 
 const stripAccents = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '')
 

@@ -1,4 +1,5 @@
 // One card's puzzle: the masked view of every face and the guesses made against it.
+import { ART_HINT_COST, MAX_ART_HINTS } from './artHints'
 import { answerName, facesOf, normalizeName, type Card, type Face, type Layout } from './card'
 import { isRevealed, keysIn, tokenize, type Token } from './tokens'
 
@@ -33,7 +34,10 @@ export type InfoLine = { rarity: Token[]; number: Token[]; set: Token[] }
 
 export type CardView = { layout: Layout; faces: FaceView[]; answer: Token[]; info: InfoLine | null }
 
-export type Guess = { type: 'key'; key: string; hit: boolean } | { type: 'name'; text: string; hit: boolean }
+export type Guess =
+  | { type: 'key'; key: string; hit: boolean }
+  | { type: 'name'; text: string; hit: boolean }
+  | { type: 'art'; hit: true } // an art hint: reveals a patch of the art, costs ART_HINT_COST tries
 export type CardGame = { guesses: Guess[]; status: 'playing' | 'won' | 'lost' }
 
 function kindOf(face: Face): FaceKind {
@@ -105,7 +109,20 @@ export function faceTokens(f: FaceView): Token[] {
 
 export const newCardGame = (): CardGame => ({ guesses: [], status: 'playing' })
 
-export const triesLeft = (game: CardGame) => MAX_TRIES - game.guesses.length
+/** How many of the 13 tries a guess uses. */
+export const guessCost = (g: Guess) => (g.type === 'art' ? ART_HINT_COST : 1)
+
+export const triesLeft = (game: CardGame) => MAX_TRIES - game.guesses.reduce((n, g) => n + guessCost(g), 0)
+
+export const artHints = (game: CardGame) => game.guesses.filter((g) => g.type === 'art').length
+
+/** An art hint is offered while it still leaves at least one try to name the card. */
+export const canUseArtHint = (game: CardGame) =>
+  game.status === 'playing' && artHints(game) < MAX_ART_HINTS && triesLeft(game) > ART_HINT_COST
+
+export function guessArt(game: CardGame): CardGame {
+  return canUseArtHint(game) ? { ...game, guesses: [...game.guesses, { type: 'art', hit: true }] } : game
+}
 
 export function guessedKeys(game: CardGame): Set<string> {
   return new Set(game.guesses.flatMap((g) => (g.type === 'key' ? [g.key] : [])))

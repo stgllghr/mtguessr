@@ -8,9 +8,11 @@ type Mask = {
   fresh: string | null // the latest guess; its reveals get the ink-in animation
   reveal: boolean // show everything (card is over)
   version: number // changes whenever what's shown changes, so text can re-fit
+  cardId: string // Scryfall id, for the art behind art hints
+  artHints: number // how many art hints have been bought
 }
 
-export const MaskContext = createContext<Mask>({ guessed: new Set(), fresh: null, reveal: false, version: 0 })
+export const MaskContext = createContext<Mask>({ guessed: new Set(), fresh: null, reveal: false, version: 0, cardId: '', artHints: 0 })
 
 type Props = {
   tokens: Token[]

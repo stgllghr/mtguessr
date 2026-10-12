@@ -10,6 +10,13 @@ function mulberry32(seed: number) {
   }
 }
 
+/** A repeatable random number generator from a string, e.g. a card id. */
+export function randomFrom(seed: string): () => number {
+  let h = 2166136261
+  for (const ch of seed) h = Math.imul(h ^ ch.charCodeAt(0), 16777619)
+  return mulberry32(h)
+}
+
 export function seededShuffle<T>(items: T[], seed: number): T[] {
   const out = [...items]
   const rand = mulberry32(seed)

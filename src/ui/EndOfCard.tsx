@@ -1,6 +1,6 @@
 // Shown in place of the keyboard once a card is solved or the tries run out.
 import { edhrecUrl, scryfallUrl, type Card } from '../game/card'
-import { triesLeft, type CardGame } from '../game/cardGame'
+import { MAX_TRIES, triesLeft, type CardGame } from '../game/cardGame'
 
 type Props = {
   card: Card
@@ -14,7 +14,7 @@ type Props = {
 }
 
 export function EndOfCard({ card, game, streak, best, qa, onNext, onPlayAgain, onMenu }: Props) {
-  const used = game.guesses.length
+  const used = MAX_TRIES - triesLeft(game)
   const won = game.status === 'won'
   const name = card.full ?? card.n
   return (

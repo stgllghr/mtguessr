@@ -145,3 +145,15 @@ Pools are grouped on the start screen:
 - **Set line:** bottom left, as on modern cards: rarity letter and collector number (numeric
   numbers padded to four digits), then set code, a dot and the artist. All blanks, guessable
   with letter and number keys.
+
+## Art hints (added 2026-10-11)
+
+An **Art hint** button costs 3 tries and reveals a square of the card's art (Scryfall
+`art_crop`). Each art box is split into four rings of equal width around its center, out to
+the corners; hint *n* reveals a square in ring *n*, outermost first, so 4 hints is the maximum
+(4 × 3 = 12 of 13 tries, leaving one to name the card). The button is off once 3 or fewer tries
+remain. Squares are half a ring wide, placed at random within the ring and wholly inside the
+box, seeded by card id and art box so they don't move on reload. Every art box on the card
+gets its square at once: both halves of split and aftermath cards (slices of one art crop,
+50/50 and 61/39), and front and back of double-faced cards (their own art crops). In the
+guess bar a hint fills a 3-slot cell.

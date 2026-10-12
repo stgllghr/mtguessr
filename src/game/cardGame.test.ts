@@ -3,7 +3,10 @@ import type { Card } from './card'
 import { edhrecUrl, imageUrl, normalizeName } from './card'
 import {
   MAX_TRIES,
+  artHints,
   buildView,
+  canUseArtHint,
+  guessArt,
   guessKey,
   guessName,
   guessedKeys,
@@ -203,6 +206,31 @@ describe('set line', () => {
   })
   it('is absent for cards without printing details', () => {
     expect(buildView(elves).info).toBeNull()
+  })
+})
+
+describe('art hints', () => {
+  it('cost three tries each and are counted', () => {
+    const g = guessArt(newCardGame())
+    expect(g.guesses).toEqual([{ type: 'art', hit: true }])
+    expect(triesLeft(g)).toBe(MAX_TRIES - 3)
+    expect(artHints(guessArt(g))).toBe(2)
+  })
+  it('allow four hints, always leaving a try to name the card', () => {
+    let g = newCardGame()
+    for (let i = 0; i < 4; i++) g = guessArt(g)
+    expect(artHints(g)).toBe(4)
+    expect(triesLeft(g)).toBe(1)
+    expect(canUseArtHint(g)).toBe(false)
+    expect(guessArt(g)).toBe(g)
+    expect(guessName(elves, g, 'Llanowar Elves').status).toBe('won')
+    expect(guessName(elves, g, 'Elvish Mystic').status).toBe('lost')
+  })
+  it('are not offered with three or fewer tries left, or once the card is over', () => {
+    const low = play(elves, ['Q', 'Z', 'J', 'K', 'X', 'Y', 'U', 'B', 'C', 'D'])
+    expect(triesLeft(low)).toBe(3)
+    expect(canUseArtHint(low)).toBe(false)
+    expect(canUseArtHint(guessName(elves, newCardGame(), 'Llanowar Elves'))).toBe(false)
   })
 })
 

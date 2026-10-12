@@ -16,6 +16,7 @@ type Props = {
   fresh: string | null
   hard: boolean
   over: boolean
+  artHints: number
 }
 
 function Side({ card, view, index, hard, over }: { card: Card; view: CardView; index: number; hard: boolean; over: boolean }) {
@@ -51,14 +52,14 @@ function Side({ card, view, index, hard, over }: { card: Card; view: CardView; i
   )
 }
 
-export function CardFace({ card, view, guessed, fresh, hard, over }: Props) {
+export function CardFace({ card, view, guessed, fresh, hard, over, artHints }: Props) {
   const [turns, setTurns] = useState(0)
   const [flipped, setFlipped] = useState(false)
   const twoSided = isTwoSided(view.layout) && view.faces.length > 1
   const sideways = turns % 2 === 1
 
   return (
-    <MaskContext.Provider value={{ guessed, fresh, reveal: over, version: guessed.size + (over ? 100 : 0) }}>
+    <MaskContext.Provider value={{ guessed, fresh, reveal: over, version: guessed.size + (over ? 100 : 0), cardId: card.id, artHints }}>
       <div className="card-area">
         <div className={`card-slot${sideways ? ' turned' : ''}`}>
           <div className="card-flip" style={{ rotate: `${turns * 90}deg` }}>

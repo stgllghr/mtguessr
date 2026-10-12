@@ -12,6 +12,9 @@ miss ends the run.
   - **All of Magic:** any card (about 32,000), or every legendary creature.
   - **One set:** pick any set; its cards come live from Scryfall.
 - **Set line:** the rarity, collector number and set code at the bottom left are blanks too.
+- **Art hints:** for 3 tries, reveal a small square of the art. Up to 4 per card, starting at the
+  edge and moving one ring closer to the center each time. Cards with several art boxes (split,
+  aftermath, double-faced) get a square in every one.
 - **Hard mode:** also hides the frame color.
 - **Real card layouts:** planeswalkers, sagas, classes, adventures, prepared spells, split and
   aftermath cards, flip cards, battles and double-faced cards put their blanks where the text is

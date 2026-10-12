@@ -1,7 +1,8 @@
 // Masked card frames, one per printed layout. Every size is in cqw (card widths), so the
 // frames scale with the card, and rotated parts reuse the same pieces.
-import { useContext, type CSSProperties, type ReactNode } from 'react'
-import { hybridPair, type Face } from '../game/card'
+import { useContext, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { patchRects } from '../game/artHints'
+import { hybridPair, imageUrl, type Face } from '../game/card'
 import type { CardView, FaceView, InfoLine as Info, Section } from '../game/cardGame'
 import { MaskContext, TokenText } from './TokenText'
 import { useFit } from './useFit'
@@ -159,17 +160,72 @@ export function InfoLine({ info, face }: { info: Info | null; face: FaceView }) 
   )
 }
 
+/** Which art an art box shows: the front or back art crop, and the slice of its width
+ * (split and aftermath cards have both halves' art side by side in one image). */
+type ArtSpec = { side: 'front' | 'back'; from: number; to: number; key: string }
+
+const WHOLE_FRONT: ArtSpec = { side: 'front', from: 0, to: 1, key: 'front' }
+const WHOLE_BACK: ArtSpec = { side: 'back', from: 0, to: 1, key: 'back' }
+
+/** An art box: blank, except for the squares revealed by art hints. */
+function Art({ spec }: { spec: ArtSpec }) {
+  const { cardId, artHints } = useContext(MaskContext)
+  const ref = useRef<HTMLDivElement>(null)
+  const [size, setSize] = useState<{ w: number; h: number } | null>(null)
+
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const measure = () => setSize({ w: el.clientWidth, h: el.clientHeight })
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  const patches = size && artHints > 0 ? patchRects(artHints, `${cardId}:${spec.key}`, size.w, size.h) : []
+  const clip = patches.map((p) => `M${p.x} ${p.y}h${p.size}v${p.size}h${-p.size}Z`).join('')
+  const width = spec.to - spec.from
+
+  return (
+    <div className="art" ref={ref}>
+      {patches.length > 0 && (
+        <div className="art-reveal" style={{ clipPath: `path('${clip}')` }}>
+          <div
+            className="art-image"
+            style={{
+              backgroundImage: `url(${imageUrl(cardId, spec.side, 'art_crop')})`,
+              width: `${100 / width}%`,
+              left: `${(-spec.from / width) * 100}%`,
+            }}
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
 /** A single upright face. `inset` puts an adventure/prepared spell panel in the text box. */
-function Upright({ face, hard, inset }: { face: FaceView; hard: boolean; inset?: { face: FaceView; side: 'left' | 'right' } }) {
+function Upright({
+  face,
+  hard,
+  art,
+  inset,
+}: {
+  face: FaceView
+  hard: boolean
+  art: ArtSpec
+  inset?: { face: FaceView; side: 'left' | 'right' }
+}) {
   const frame = `frame ${frameOf(face.face, hard)} kind-${face.kind}`
   if (face.kind === 'saga' || face.kind === 'class') {
     return (
       <div className={frame}>
         <NameBar face={face} />
         <div className="tall-body">
-          {face.kind === 'class' && <div className="art" />}
+          {face.kind === 'class' && <Art spec={art} />}
           <TextBox face={face} />
-          {face.kind === 'saga' && <div className="art" />}
+          {face.kind === 'saga' && <Art spec={art} />}
         </div>
         <TypeBar face={face} />
       </div>
@@ -197,7 +253,7 @@ function Upright({ face, hard, inset }: { face: FaceView; hard: boolean; inset?:
   return (
     <div className={frame}>
       <NameBar face={face} />
-      <div className="art" />
+      <Art spec={art} />
       <TypeBar face={face} />
       {panel ? (
         <div className="split-box">
@@ -221,6 +277,9 @@ function Sideways({ turn, width, height, children }: { turn: 90 | -90; width: nu
   )
 }
 
+// In an aftermath card's art crop, the top half's art takes this share of the width.
+const AFTERMATH_SPLIT = 0.61
+
 // Inner area of a card (inside the black border), in cqw.
 const INNER_W = 91.6
 const INNER_H = 127.9
@@ -229,24 +288,25 @@ const INNER_H = 127.9
 export function FaceFrame({ view, index, hard }: { view: CardView; index: number; hard: boolean }) {
   const face = view.faces[index]
   const other = view.faces[1]
+  const art = index === 0 ? WHOLE_FRONT : WHOLE_BACK
 
   if (index === 0 && (view.layout === 'split' || view.layout === 'aftermath') && other) {
     if (view.layout === 'split') {
       return (
         <Sideways turn={-90} width={INNER_H} height={INNER_W}>
           <div className="halves">
-            <Upright face={face} hard={hard} />
-            <Upright face={other} hard={hard} />
+            <Upright face={face} hard={hard} art={{ side: 'front', from: 0, to: 0.5, key: 'left' }} />
+            <Upright face={other} hard={hard} art={{ side: 'front', from: 0.5, to: 1, key: 'right' }} />
           </div>
         </Sideways>
       )
     }
     return (
       <div className="aftermath">
-        <Upright face={face} hard={hard} />
+        <Upright face={face} hard={hard} art={{ side: 'front', from: 0, to: AFTERMATH_SPLIT, key: 'top' }} />
         <div className="aftermath-bottom">
           <Sideways turn={90} width={INNER_H * 0.44} height={INNER_W}>
-            <Upright face={other} hard={hard} />
+            <Upright face={other} hard={hard} art={{ side: 'front', from: AFTERMATH_SPLIT, to: 1, key: 'bottom' }} />
           </Sideways>
         </div>
       </div>
@@ -264,14 +324,14 @@ export function FaceFrame({ view, index, hard }: { view: CardView; index: number
     return (
       <div className={`frame ${frameOf(face.face, hard)} flip-frame`}>
         {half(face)}
-        <div className="art" />
+        <Art spec={WHOLE_FRONT} />
         <div className="upside-down">{half(other)}</div>
       </div>
     )
   }
 
   if (index === 0 && (view.layout === 'adventure' || view.layout === 'prepare') && other) {
-    return <Upright face={face} hard={hard} inset={{ face: other, side: view.layout === 'adventure' ? 'left' : 'right' }} />
+    return <Upright face={face} hard={hard} art={WHOLE_FRONT} inset={{ face: other, side: view.layout === 'adventure' ? 'left' : 'right' }} />
   }
 
   if (face.kind === 'battle') {
@@ -279,7 +339,7 @@ export function FaceFrame({ view, index, hard }: { view: CardView; index: number
       <Sideways turn={-90} width={INNER_H} height={INNER_W}>
         <div className={`frame ${frameOf(face.face, hard)} battle-frame`}>
           <NameBar face={face} />
-          <div className="art" />
+          <Art spec={art} />
           <TypeBar face={face} />
           <TextBox face={face} />
           <Stats face={face} />
@@ -288,7 +348,7 @@ export function FaceFrame({ view, index, hard }: { view: CardView; index: number
     )
   }
 
-  return <Upright face={face} hard={hard} />
+  return <Upright face={face} hard={hard} art={art} />
 }
 
 /** The plain back of a Magic card, in our own colors: shown for cards without a printed back face. */
