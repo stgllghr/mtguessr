@@ -223,6 +223,10 @@ export function StartScreen({ qa, settings, onSettings, count, bests, saved, bus
         <a href="https://www.mtgo.com/decklists">Magic Online tournament results</a>. Based on EDHREC's{' '}
         <a href="https://edhrec.com/games/spellify">Spellify</a>; not affiliated with EDHREC or Scryfall.
       </p>
+      <p className="credits">
+        MTGuessr is open source: see the code or report a problem on{' '}
+        <a href="https://github.com/stgllghr/mtguessr">GitHub</a>.
+      </p>
       {(updated.cards || updated.staples) && (
         <p className="credits">
           {updated.cards && `Card data updated ${shortDate(updated.cards)}`}
