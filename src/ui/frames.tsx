@@ -69,6 +69,20 @@ function SectionBlock({ section }: { section: Section }) {
           <span className="level-name">{text}</span>
         </div>
       )
+    case 'chapter':
+      // One icon per chapter number, even when chapters share text ("II, III — …").
+      return (
+        <div className="badged chapter">
+          <span className="chapter-icons">
+            {section.chapters!.map((n) => (
+              <span key={n} className="badge">
+                {n}
+              </span>
+            ))}
+          </span>
+          <p>{text}</p>
+        </div>
+      )
     default:
       return (
         <div className={`badged ${section.kind}`}>

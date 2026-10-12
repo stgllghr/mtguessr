@@ -930,6 +930,12 @@ a {
   clip-path: polygon(12% 0, 88% 0, 100% 50%, 88% 100%, 12% 100%, 0 50%);
 }
 
+.chapter-icons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+}
+
 .chapter .badge {
   clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
   min-height: 2.1em;

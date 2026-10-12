@@ -6,9 +6,15 @@ export const MAX_TRIES = 13
 
 export type FaceKind = 'standard' | 'planeswalker' | 'saga' | 'class' | 'battle'
 
-/** A block of rules text. Loyalty abilities, saga chapters and class levels carry a badge
- * (the cost, numerals, or level cost) that is drawn apart from the text. */
-export type Section = { kind: 'plain' | 'loyalty' | 'chapter' | 'level'; badge: Token[] | null; tokens: Token[] }
+/** A block of rules text. Loyalty abilities and class levels carry a hidden badge (the cost
+ * or level cost) drawn apart from the text. Saga chapters list their numerals, which are
+ * always shown: one icon each, beside text they share ("II, III — …"). */
+export type Section = {
+  kind: 'plain' | 'loyalty' | 'chapter' | 'level'
+  badge: Token[] | null
+  chapters?: string[]
+  tokens: Token[]
+}
 
 export type FaceView = {
   face: Face
@@ -48,8 +54,8 @@ function sectionsOf(text: string, kind: FaceKind): Section[] {
     const pattern = kind === 'planeswalker' ? LOYALTY : kind === 'saga' ? CHAPTER : kind === 'class' ? LEVEL : null
     const m = pattern?.exec(line)
     if (!m) return { kind: 'plain', badge: null, tokens: tokenize(line) }
-    const sectionKind = kind === 'planeswalker' ? 'loyalty' : kind === 'saga' ? 'chapter' : 'level'
-    return { kind: sectionKind, badge: tokenize(m[1]), tokens: tokenize(m[2]) }
+    if (kind === 'saga') return { kind: 'chapter', badge: null, chapters: m[1].split(', '), tokens: tokenize(m[2]) }
+    return { kind: kind === 'planeswalker' ? 'loyalty' : 'level', badge: tokenize(m[1]), tokens: tokenize(m[2]) }
   })
 }
 

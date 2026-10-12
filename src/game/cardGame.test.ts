@@ -162,11 +162,17 @@ describe('sections', () => {
     expect(shown(s.tokens, newCardGame())).toBe('_________.')
     expect(buildView(lili).faces[0].kind).toBe('planeswalker')
   })
-  it('splits saga chapters with their numerals', () => {
-    const saga: Card = { n: 'The Eldest Reborn', m: '{4}{B}', t: 'Enchantment — Saga', o: '(Reminder.)\nI — One.\nII, III — Two.', c: 'B', id: 's' }
+  const saga: Card = { n: 'The Eldest Reborn', m: '{4}{B}', t: 'Enchantment — Saga', o: '(Lore.)\nI — One.\nII, III — Two.', c: 'B', id: 's' }
+  it('splits saga chapters, one numeral per chapter, shared text kept together', () => {
     expect(kinds(saga)).toEqual(['plain', 'chapter', 'chapter'])
-    expect(shown(buildView(saga).faces[0].sections[2].badge!, newCardGame())).toBe('__, ___')
+    const shared = buildView(saga).faces[0].sections[2]
+    expect(shared.chapters).toEqual(['II', 'III'])
+    expect(shared.badge).toBeNull()
+    expect(shown(shared.tokens, newCardGame())).toBe('___.')
     expect(buildView(saga).faces[0].kind).toBe('saga')
+  })
+  it('shows chapter numerals, so guessing I, V or X is not a hit because of them', () => {
+    expect(play(saga, ['I']).guesses[0].hit).toBe(false)
   })
   it('splits class levels into level bars', () => {
     const cls: Card = { n: 'Druid Class', m: '{1}{G}', t: 'Enchantment — Class', o: '(Reminder.)\nLandfall.\n{2}{G}: Level 2\nExtra land.', c: 'G', id: 'c' }
