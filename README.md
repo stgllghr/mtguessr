@@ -53,13 +53,19 @@ Nothing in QA counts toward best streaks.
 ## Refresh the card data
 
 The card lists are committed in `public/` (`cards-top.json`, `cards-rest.json`). To rebuild them
-from Scryfall's latest Oracle Cards bulk file (about 25 MB download):
+from Scryfall's latest bulk files (Oracle Cards, about 25 MB, and Default Cards with every
+printing, about 80 MB):
 
 ```bash
 npm run cards
 ```
 
-You can also pass a local copy: `node scripts/build-cards.mjs path/to/oracle-cards.jsonl.gz`.
+You can also pass local copies: `node scripts/build-cards.mjs oracle-cards.jsonl.gz default-cards.jsonl.gz`.
+
+Each card shows its **original art**: the first normal paper printing's artwork (no promos,
+digital-only, showcase or borderless printings), on the newest printing that reused it. In
+Standard, Pioneer and Modern pools it shows the newest printing from a set in that format
+instead. Rules text is always current Oracle wording.
 
 ## Deploy to Vercel
 

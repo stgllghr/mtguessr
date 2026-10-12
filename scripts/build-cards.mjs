@@ -1,10 +1,12 @@
 // Builds public/cards-top.json and public/cards-rest.json from Scryfall's Oracle Cards bulk file.
-// Usage: node scripts/build-cards.mjs [path/to/oracle-cards.jsonl.gz]
+// Usage: node scripts/build-cards.mjs [oracle-cards.jsonl.gz] [default-cards.jsonl.gz]
+// (Without paths, both bulk files are downloaded: about 25 MB and 80 MB.)
 import { createReadStream, writeFileSync } from 'node:fs'
 import { createInterface } from 'node:readline'
 import { Readable } from 'node:stream'
 import { pathToFileURL } from 'node:url'
 import { createGunzip } from 'node:zlib'
+import { formatSetCodes, pickFormatPrinting, pickOriginalArtPrinting, slimPrinting } from './printings.mjs'
 
 const TOP_COUNT = 10000
 const UA = { 'User-Agent': 'SpellifyEndless/0.1', Accept: 'application/json' }
@@ -75,7 +77,25 @@ function compactFace(raw, face, layout, index) {
 const FORMAT_LETTERS = { standard: 's', pioneer: 'p', modern: 'm' }
 const RARITY_LETTERS = { common: 'C', uncommon: 'U', rare: 'R', mythic: 'M', special: 'S', bonus: 'B' }
 
-export function toCompact(raw) {
+/** A printing's image id, set line, flavor and artist, as a compact override. */
+export function printingOverride(printing) {
+  const out = {
+    id: printing.id,
+    s: printing.set.toUpperCase(),
+    cn: printing.collector_number,
+    ry: RARITY_LETTERS[printing.rarity],
+    f: printing.faces[0]?.flavor_text,
+    a: printing.faces[0]?.artist,
+  }
+  const backs = printing.faces.slice(1).map((f) => ({ f: f.flavor_text, a: f.artist }))
+  if (backs.some((b) => b.f || b.a)) out.x = backs
+  for (const k of Object.keys(out)) if (out[k] === undefined) delete out[k]
+  return out
+}
+
+/** A card from its Oracle record. `printing` (from printings.mjs) chooses the image, set line,
+ * flavor text and artist; without one, the Oracle record's own printing is used. */
+export function toCompact(raw, printing) {
   const layout = layoutOf(raw)
   const faces = raw.card_faces ?? [raw]
   const card = { ...compactFace(raw, faces[0], layout, 0) }
@@ -94,13 +114,28 @@ export function toCompact(raw) {
     card.lay = layout
     card.x = faces.slice(1).map((f, i) => compactFace(raw, f, layout, i + 1))
   }
+  if (printing) {
+    const o = printingOverride(printing)
+    Object.assign(card, { id: o.id, s: o.s, cn: o.cn })
+    if (o.ry) card.ry = o.ry
+    if (o.f) card.f = o.f
+    else delete card.f
+    if (o.a) card.a = o.a
+    card.x?.forEach((face, i) => {
+      const back = printing.faces[i + 1]
+      if (!back) return
+      if (back.flavor_text) face.f = back.flavor_text
+      else delete face.f
+      if (back.artist) face.a = back.artist
+    })
+  }
   return card
 }
 
-async function openBulk(localPath) {
+async function openBulk(type, localPath) {
   if (localPath) return createReadStream(localPath)
   const index = await (await fetch('https://api.scryfall.com/bulk-data', { headers: UA })).json()
-  const entry = index.data.find((d) => d.type === 'oracle_cards')
+  const entry = index.data.find((d) => d.type === type)
   const url = entry.jsonl_download_uri ?? entry.download_uri
   console.log(`Downloading ${url}`)
   const res = await fetch(url, { headers: UA })
@@ -108,21 +143,54 @@ async function openBulk(localPath) {
   return Readable.fromWeb(res.body)
 }
 
-async function main() {
-  const input = (await openBulk(process.argv[2])).pipe(createGunzip())
-  const kept = []
-  for await (const line of createInterface({ input, crlfDelay: Infinity })) {
-    if (!line.trim()) continue
-    const raw = JSON.parse(line)
-    if (isRealCard(raw)) kept.push(raw)
+async function* lines(stream) {
+  for await (const line of createInterface({ input: stream.pipe(createGunzip()), crlfDelay: Infinity })) {
+    if (line.trim()) yield JSON.parse(line)
   }
+}
+
+async function main() {
+  const [oraclePath, defaultPath] = process.argv.slice(2)
+  const kept = []
+  for await (const raw of lines(await openBulk('oracle_cards', oraclePath))) if (isRealCard(raw)) kept.push(raw)
+
+  // Every English printing of the cards we keep, to choose each card's art and set line.
+  const keptIds = new Set(kept.map((c) => c.oracle_id ?? c.card_faces?.[0]?.oracle_id))
+  const printingsOf = new Map()
+  const allPrintings = []
+  for await (const raw of lines(await openBulk('default_cards', defaultPath))) {
+    const p = slimPrinting(raw)
+    if (!keptIds.has(p.oracle_id)) continue
+    allPrintings.push(p)
+    if (!printingsOf.has(p.oracle_id)) printingsOf.set(p.oracle_id, [])
+    printingsOf.get(p.oracle_id).push(p)
+  }
+  const legalities = Object.fromEntries(kept.map((c) => [c.oracle_id ?? c.card_faces?.[0]?.oracle_id, c.legalities]))
+  const formatSets = formatSetCodes(allPrintings, legalities)
+  console.log(`${allPrintings.length} printings; format sets: ${Object.entries(formatSets).map(([f, s]) => `${f} ${s.size}`).join(', ')}`)
+
+  let reprintArt = 0
+  const compact = (raw) => {
+    const printings = printingsOf.get(raw.oracle_id ?? raw.card_faces?.[0]?.oracle_id) ?? []
+    const original = pickOriginalArtPrinting(printings)
+    const card = toCompact(raw, original ?? undefined)
+    if (original && original.id !== raw.id) reprintArt++
+    // Format pools show the format's own newest printing, when it differs.
+    for (const [format, letter] of Object.entries(FORMAT_LETTERS)) {
+      if (!card.g?.includes(letter)) continue
+      const own = pickFormatPrinting(printings, formatSets[format])
+      if (own && own.id !== card.id) (card.fp ??= {})[letter] = printingOverride(own)
+    }
+    return card
+  }
+
   const ranked = kept.filter(isTopEligible).sort((a, b) => a.edhrec_rank - b.edhrec_rank)
   const top = ranked.slice(0, TOP_COUNT)
   const topIds = new Set(top.map((c) => c.id))
   const rest = kept.filter((c) => !topIds.has(c.id))
-  writeFileSync('public/cards-top.json', JSON.stringify(top.map(toCompact)))
-  writeFileSync('public/cards-rest.json', JSON.stringify(rest.map(toCompact)))
-  console.log(`top: ${top.length}, rest: ${rest.length}, total: ${top.length + rest.length}`)
+  writeFileSync('public/cards-top.json', JSON.stringify(top.map(compact)))
+  writeFileSync('public/cards-rest.json', JSON.stringify(rest.map(compact)))
+  console.log(`top: ${top.length}, rest: ${rest.length}, total: ${top.length + rest.length}; original art moved ${reprintArt} cards off a reprint`)
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {

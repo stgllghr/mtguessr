@@ -157,3 +157,16 @@ box, seeded by card id and art box so they don't move on reload. Every art box o
 gets its square at once: both halves of split and aftermath cards (slices of one art crop,
 50/50 and 61/39), and front and back of double-faced cards (their own art crops). In the
 guess bar a hint fills a 3-slot cell.
+
+## Which printing a card shows (added 2026-10-11)
+
+The art, reveal image, flavor text, artist and set line come from one printing; rules text is
+always Oracle wording. `scripts/printings.mjs` picks it from Scryfall's Default Cards bulk file:
+
+- **Default:** the card's original art. The first normal paper printing (no promos,
+  digital-only, oversized, joke, Secret Lair, showcase, extended-art, borderless or full-art
+  printings) sets the artwork; the card uses the newest printing with that same artwork.
+- **Standard, Pioneer and Modern pools:** the newest normal printing from a set in that format
+  (a core, expansion or draft-innovation set whose cards are all legal there), stored as `fp`
+  overrides when it differs from the default.
+- **One-set pools:** that set's own printing (unchanged).

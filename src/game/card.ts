@@ -28,6 +28,25 @@ export type Card = Face & {
   cn?: string // collector number
   ry?: string // rarity letter: C, U, R, M, S (special) or B (bonus)
   g?: string // formats it's legal in: s = Standard, p = Pioneer, m = Modern
+  fp?: Partial<Record<'s' | 'p' | 'm', PrintingOverride>> // a format's own printing, if different
+}
+
+/** Another printing of the same card: its image, set line, flavor text and artist. */
+export type PrintingOverride = { id: string; s: string; cn: string; ry?: string; f?: string; a?: string; x?: { f?: string; a?: string }[] }
+
+/** The card as printed in `p`: same rules text, that printing's image, set line, flavor and artist. */
+export function withPrinting(card: Card, p: PrintingOverride | undefined): Card {
+  if (!p) return card
+  const out: Card = { ...card, id: p.id, s: p.s, cn: p.cn, ry: p.ry ?? card.ry, f: p.f, a: p.a ?? card.a }
+  if (out.f === undefined) delete out.f
+  if (card.x) {
+    out.x = card.x.map((face, i) => {
+      const back = { ...face, f: p.x?.[i]?.f, a: p.x?.[i]?.a ?? face.a }
+      if (back.f === undefined) delete back.f
+      return back
+    })
+  }
+  return out
 }
 
 export const facesOf = (card: Card): Face[] => [card, ...(card.x ?? [])]

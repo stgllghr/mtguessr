@@ -1,6 +1,6 @@
 // Card pools: which cards a run draws from. Each pool is built from the card snapshot, the
 // MTGO staples lists, or (for a single set) that set's printings from Scryfall.
-import { normalizeName, type Card, type Face } from './card'
+import { normalizeName, withPrinting, type Card, type Face } from './card'
 
 export const FORMATS = ['standard', 'pioneer', 'modern'] as const
 export type Format = (typeof FORMATS)[number]
@@ -47,9 +47,10 @@ let staplesCache: { all: Card[]; staples: Staples; index: Map<string, Card> } | 
 function stapleCards(format: Format, all: Card[], staples: Staples): Card[] {
   if (staplesCache?.all !== all || staplesCache.staples !== staples) staplesCache = { all, staples, index: nameIndex(all) }
   const index = staplesCache.index
+  const letter = FORMAT_LETTER[format] as 's' | 'p' | 'm'
   return staples.formats[format].cards.flatMap((name) => {
     const card = index.get(normalizeName(name)) ?? index.get(normalizeName(name.split('/')[0]))
-    return card ? [card] : []
+    return card ? [withPrinting(card, card.fp?.[letter])] : []
   })
 }
 
@@ -64,7 +65,8 @@ export function poolCards(pool: Pool, catalog: Catalog): Card[] | null {
   if (pool === 'legends') return all.filter(isLegendaryCreature)
   const staples = stapleFormat(pool)
   if (staples) return catalog.staples ? stapleCards(staples, all, catalog.staples) : null
-  return all.filter((c) => c.g?.includes(FORMAT_LETTER[pool as Format]))
+  const letter = FORMAT_LETTER[pool as Format]
+  return all.filter((c) => c.g?.includes(letter)).map((c) => withPrinting(c, c.fp?.[letter as 's' | 'p' | 'm']))
 }
 
 /** A Scryfall card object for one printing (only the fields we read). */
@@ -81,7 +83,7 @@ export type Printing = {
 
 const RARITY: Record<string, string> = { common: 'C', uncommon: 'U', rare: 'R', mythic: 'M', special: 'S', bonus: 'B' }
 
-function withPrinting<F extends Face>(face: F, flavor: string | undefined, artist: string | undefined): F {
+function facePrinting<F extends Face>(face: F, flavor: string | undefined, artist: string | undefined): F {
   const out = { ...face, f: flavor, a: artist ?? face.a }
   if (out.f === undefined) delete out.f
   return out
@@ -94,12 +96,12 @@ export function fromPrinting(p: Printing, index: Map<string, Card>): Card | null
   if (!base) return null
   const faces = p.card_faces ?? [p]
   const card: Card = {
-    ...withPrinting(base, faces[0].flavor_text ?? p.flavor_text, faces[0].artist ?? p.artist),
+    ...facePrinting(base, faces[0].flavor_text ?? p.flavor_text, faces[0].artist ?? p.artist),
     id: p.id,
     s: p.set.toUpperCase(),
     cn: p.collector_number,
   }
   if (RARITY[p.rarity]) card.ry = RARITY[p.rarity]
-  if (base.x) card.x = base.x.map((f, i) => withPrinting(f, faces[i + 1]?.flavor_text, faces[i + 1]?.artist))
+  if (base.x) card.x = base.x.map((f, i) => facePrinting(f, faces[i + 1]?.flavor_text, faces[i + 1]?.artist))
   return card
 }

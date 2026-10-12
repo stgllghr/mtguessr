@@ -46,6 +46,17 @@ describe('poolCards', () => {
     expect(names(poolCards('pioneer', catalog))).toEqual(['Thoughtseize', 'Llanowar Elves'])
     expect(poolCards('modern', catalog)).toHaveLength(5)
   })
+  it('shows a format’s own printing in its pools, and the original-art printing elsewhere', () => {
+    const elves = card('Llanowar Elves', {
+      g: 'spm', id: 'sixth-edition', s: '6ED', cn: '239', a: 'Anson Maddocks', f: 'Old flavor',
+      fp: { s: { id: 'foundations', s: 'FDN', cn: '227', ry: 'C', a: 'Kev Walker' } },
+    })
+    const cat = { ...catalog, all: [elves] }
+    expect(poolCards('standard', cat)![0]).toMatchObject({ id: 'foundations', s: 'FDN', cn: '227', a: 'Kev Walker' })
+    expect(poolCards('standard', cat)![0].f).toBeUndefined()
+    expect(poolCards('pioneer', cat)![0]).toMatchObject({ id: 'sixth-edition', s: '6ED' })
+    expect(poolCards('all', cat)![0]).toMatchObject({ id: 'sixth-edition', f: 'Old flavor' })
+  })
   it('matches format staples to cards by name, including MTGO split-card names', () => {
     expect(names(poolCards('modern-staples', catalog))).toEqual(['Lightning Bolt', 'Rough'])
     expect(names(poolCards('standard-staples', catalog))).toEqual(['Llanowar Elves'])

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { isRealCard, isTopEligible, toCompact } from './build-cards.mjs'
+import { isRealCard, isTopEligible, printingOverride, toCompact } from './build-cards.mjs'
 
 const sample = JSON.parse(readFileSync(new URL('./fixtures/scryfall-sample.json', import.meta.url), 'utf8'))
 
@@ -60,6 +60,24 @@ describe('toCompact printing and formats', () => {
     expect(toCompact(sample['Llanowar Elves']).g).toBe('spm')
     expect(toCompact(sample['Jace, the Mind Sculptor']).g).toBe('m')
     expect('g' in toCompact(sample['Fire // Ice'])).toBe(false)
+  })
+})
+
+describe('chosen printings', () => {
+  const alpha = {
+    id: 'alpha-id', set: 'lea', collector_number: '210', rarity: 'common',
+    faces: [{ flavor_text: 'One bone broken for every twig snapped underfoot.', artist: 'Anson Maddocks' }],
+  }
+  it('takes the image, set line, flavor and artist from the chosen printing, and rules text from Oracle', () => {
+    const c = toCompact(sample['Llanowar Elves'], alpha)
+    expect(c).toMatchObject({ id: 'alpha-id', s: 'LEA', cn: '210', ry: 'C', a: 'Anson Maddocks', o: '{T}: Add {G}.' })
+    expect(c.f).toBe('One bone broken for every twig snapped underfoot.')
+  })
+  it('drops flavor the chosen printing doesn’t have', () => {
+    expect(toCompact(sample['Llanowar Elves'], { ...alpha, faces: [{ artist: 'X' }] }).f).toBeUndefined()
+  })
+  it('keeps a format printing as a small override', () => {
+    expect(printingOverride(alpha)).toEqual({ id: 'alpha-id', s: 'LEA', cn: '210', ry: 'C', f: 'One bone broken for every twig snapped underfoot.', a: 'Anson Maddocks' })
   })
 })
 
