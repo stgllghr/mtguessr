@@ -1,5 +1,7 @@
 # MTGuessr
 
+**Play it at [mtguessr.vercel.app](https://mtguessr.vercel.app).**
+
 A fan-made, endless Magic: The Gathering card-guessing game, based on
 **[Spellify](https://edhrec.com/games/spellify) by [EDHREC](https://edhrec.com)**. Go play their
 daily puzzle too! MTGuessr turns it into an endless run: you get a card with every word on it
