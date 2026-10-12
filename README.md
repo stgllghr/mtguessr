@@ -49,12 +49,37 @@ Then open http://localhost:5173. Other commands:
 | `npm run preview` | Serve the production build locally |
 | `npm run cards` | Rebuild the card data from Scryfall (downloads about 105 MB) |
 | `npm run staples` | Rebuild the format staples from Magic Online results (about 15 minutes) |
+| `npm run staples:update` | Rebuild the staples, check them, then commit and push |
 
 ## Deploy
 
-It's a static Vite site with no server, so any static host works. On
-[Vercel](https://vercel.com): import the GitHub repo (*Add New → Project*) and deploy; Vercel
-detects Vite on its own (build `npm run build`, output `dist`). Or from a terminal: `npx vercel`.
+It's a static Vite site plus one tiny function, hosted on [Vercel](https://vercel.com):
+
+1. In Vercel, choose *Add New → Project* and import this GitHub repo. `vercel.json` sets the
+   build, so just press **Deploy**. Every push to `main` redeploys.
+2. For weekly card updates, in the project's **Settings**:
+   - **Git → Deploy Hooks:** create a hook for the `main` branch and copy its URL.
+   - **Environment Variables:** add `DEPLOY_HOOK_URL` (that URL) and `CRON_SECRET` (any long
+     random string, e.g. from `openssl rand -hex 32`). Then redeploy once so the cron job sees
+     them.
+
+## Keeping the data fresh
+
+- **Cards update themselves every week.** A Vercel cron job (Mondays, 9:00 UTC) calls
+  `/api/refresh`, which starts a fresh deploy. Each deploy downloads Scryfall's latest bulk files
+  (an official download, not scraping) and rebuilds the card data, so new sets, rules changes and
+  EDHREC ranks show up within a week. If the download fails or the new data looks wrong, the
+  deploy uses the card data committed in the repo instead.
+- **Format staples are refreshed from your own computer.** They're read from mtgo.com, and
+  GitHub's and Vercel's terms don't allow scraping from their servers. Run this whenever you
+  want an update (it takes about 15 minutes); it checks the new list, then commits and pushes,
+  which redeploys the site:
+
+  ```bash
+  npm run staples:update
+  ```
+
+- The game's footer shows when the card data and staples were last updated.
 
 ## How the data works
 

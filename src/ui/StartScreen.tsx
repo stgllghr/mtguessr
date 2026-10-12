@@ -32,6 +32,10 @@ function Title() {
   )
 }
 
+/** "2026-10-13" → "Oct 13, 2026" (dates are calendar days, so no time zone shift). */
+const shortDate = (iso: string) =>
+  new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
+
 type Group = 'commander' | 'standard' | 'pioneer' | 'modern' | 'everything' | 'set' | 'qa'
 
 const GROUPS: { id: Group; label: string }[] = [
@@ -87,11 +91,12 @@ type Props = {
   saved: Run | null
   busy: boolean
   error: string | null
+  updated: { cards: string | null; staples: string | null }
   onPlay: () => void
   onResume: () => void
 }
 
-export function StartScreen({ qa, settings, onSettings, count, bests, saved, busy, error, onPlay, onResume }: Props) {
+export function StartScreen({ qa, settings, onSettings, count, bests, saved, busy, error, updated, onPlay, onResume }: Props) {
   const [group, setGroup] = useState<Group>(() => groupOf(settings.pool))
   const groups = qa ? [...GROUPS, { id: 'qa' as const, label: 'QA' }] : GROUPS
   const ready = groupOf(settings.pool) === group
@@ -214,6 +219,13 @@ export function StartScreen({ qa, settings, onSettings, count, bests, saved, bus
         <a href="https://www.mtgo.com/decklists">Magic Online tournament results</a>. Based on EDHREC's{' '}
         <a href="https://edhrec.com/games/spellify">Spellify</a>; not affiliated with EDHREC or Scryfall.
       </p>
+      {(updated.cards || updated.staples) && (
+        <p className="credits">
+          {updated.cards && `Card data updated ${shortDate(updated.cards)}`}
+          {updated.cards && updated.staples && ' · '}
+          {updated.staples && `format staples ${shortDate(updated.staples)}`}.
+        </p>
+      )}
       <p className="credits">
         MTGuessr is unofficial Fan Content permitted under the{' '}
         <a href="https://company.wizards.com/en/legal/fancontentpolicy">Fan Content Policy</a>. Not approved/endorsed

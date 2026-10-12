@@ -1,7 +1,9 @@
 // Builds public/cards-top.json and public/cards-rest.json from Scryfall's Oracle Cards bulk file.
-// Usage: node scripts/build-cards.mjs [oracle-cards.jsonl.gz] [default-cards.jsonl.gz]
-// (Without paths, both bulk files are downloaded: about 25 MB and 80 MB.)
+// Usage: node scripts/build-cards.mjs [oracle-cards.jsonl.gz] [default-cards.jsonl.gz] [--out dir]
+// Without paths, both bulk files are downloaded (about 25 MB and 80 MB). Writes cards-top.json,
+// cards-rest.json and meta.json (the date) to public/, or to --out.
 import { createReadStream, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { createInterface } from 'node:readline'
 import { Readable } from 'node:stream'
 import { pathToFileURL } from 'node:url'
@@ -134,11 +136,11 @@ export function toCompact(raw, printing) {
 
 async function openBulk(type, localPath) {
   if (localPath) return createReadStream(localPath)
-  const index = await (await fetch('https://api.scryfall.com/bulk-data', { headers: UA })).json()
+  const index = await (await fetch('https://api.scryfall.com/bulk-data', { headers: UA, signal: AbortSignal.timeout(60 * 1000) })).json()
   const entry = index.data.find((d) => d.type === type)
   const url = entry.jsonl_download_uri ?? entry.download_uri
   console.log(`Downloading ${url}`)
-  const res = await fetch(url, { headers: UA })
+  const res = await fetch(url, { headers: UA, signal: AbortSignal.timeout(10 * 60 * 1000) })
   if (!res.ok) throw new Error(`Download failed: ${res.status}`)
   return Readable.fromWeb(res.body)
 }
@@ -150,7 +152,10 @@ async function* lines(stream) {
 }
 
 async function main() {
-  const [oraclePath, defaultPath] = process.argv.slice(2)
+  const args = process.argv.slice(2)
+  const outAt = args.indexOf('--out')
+  const out = outAt >= 0 ? args[outAt + 1] : 'public'
+  const [oraclePath, defaultPath] = args.filter((_, i) => outAt < 0 || (i !== outAt && i !== outAt + 1))
   const kept = []
   for await (const raw of lines(await openBulk('oracle_cards', oraclePath))) if (isRealCard(raw)) kept.push(raw)
 
@@ -188,8 +193,9 @@ async function main() {
   const top = ranked.slice(0, TOP_COUNT)
   const topIds = new Set(top.map((c) => c.id))
   const rest = kept.filter((c) => !topIds.has(c.id))
-  writeFileSync('public/cards-top.json', JSON.stringify(top.map(compact)))
-  writeFileSync('public/cards-rest.json', JSON.stringify(rest.map(compact)))
+  writeFileSync(join(out, 'cards-top.json'), JSON.stringify(top.map(compact)))
+  writeFileSync(join(out, 'cards-rest.json'), JSON.stringify(rest.map(compact)))
+  writeFileSync(join(out, 'meta.json'), JSON.stringify({ cards: new Date().toISOString().slice(0, 10) }))
   console.log(`top: ${top.length}, rest: ${rest.length}, total: ${top.length + rest.length}; original art moved ${reprintArt} cards off a reprint`)
 }
 

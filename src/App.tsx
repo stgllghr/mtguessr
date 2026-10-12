@@ -60,6 +60,7 @@ export default function App() {
   const [top, setTop] = useState<Card[] | null>(null)
   const [rest, setRest] = useState<Card[] | null>(null)
   const [staples, setStaples] = useState<Staples | null>(null)
+  const [cardsUpdated, setCardsUpdated] = useState<string | null>(null)
   const [sets, setSets] = useState<Record<string, Card[]>>({})
   const [fatal, setFatal] = useState<string | null>(null)
   const [startError, setStartError] = useState<string | null>(null)
@@ -85,6 +86,7 @@ export default function App() {
       .then(setTop)
       .catch(() => setFatal('The card list did not load. Check your connection, then reload the page.'))
     once('staples', () => fetchJson<Staples>('staples.json')).then(setStaples, () => {})
+    fetchJson<{ cards: string }>('meta.json').then((m) => setCardsUpdated(m.cards), () => {})
   }, [once])
 
   const all = useMemo(() => (top && rest ? top.concat(rest) : null), [top, rest])
@@ -217,6 +219,7 @@ export default function App() {
         saved={run && run.game.status !== 'lost' ? run : null}
         busy={busy}
         error={startError}
+        updated={{ cards: cardsUpdated, staples: staples?.updated ?? null }}
         onPlay={() => begin(settings)}
         onResume={() => setScreen('play')}
       />
