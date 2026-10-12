@@ -16,13 +16,16 @@ const mdfc = card('Witch Enchanter', 'Creature — Human Warlock', { lay: 'mdfc'
 const saga = card('The Eldest Reborn', 'Enchantment — Saga')
 const cls = card('Druid Class', 'Enchantment — Class')
 const walker = card('Liliana of the Veil', 'Legendary Planeswalker — Liliana')
+const land = card('Watery Grave', 'Land — Island Swamp', { c: 'UB' })
+const urzasSaga = card("Urza's Saga", 'Enchantment Land — Urza’s Saga')
 const plain = card('Llanowar Elves', 'Creature — Elf Druid')
 
 describe('qaCategory', () => {
   it('names the special frame of every kind of card', () => {
-    expect([adventure, prepared, split, aftermath, flip, battle, transform, mdfc, saga, cls, walker].map(qaCategory)).toEqual([
-      'Adventure', 'Prepared', 'Split', 'Aftermath', 'Flip', 'Battle', 'Transform', 'MDFC', 'Saga', 'Class', 'Planeswalker',
+    expect([adventure, prepared, split, aftermath, flip, battle, transform, mdfc, saga, cls, walker, land].map(qaCategory)).toEqual([
+      'Adventure', 'Prepared', 'Split', 'Aftermath', 'Flip', 'Battle', 'Transform', 'MDFC', 'Saga', 'Class', 'Planeswalker', 'Land',
     ])
+    expect(qaCategory(urzasSaga)).toBe('Saga')
   })
   it('leaves ordinary cards out', () => {
     expect(qaCategory(plain)).toBeNull()

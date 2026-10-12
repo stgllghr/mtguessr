@@ -10,7 +10,7 @@ export type Face = {
   th?: string
   l?: string // loyalty
   d?: string // defense
-  c: string // frame colors in WUBRG order, "" for colorless
+  c: string // frame colors in WUBRG order, "" for colorless; a land's are the colors printed on it
 }
 
 export type Layout = 'normal' | 'split' | 'aftermath' | 'adventure' | 'prepare' | 'mdfc' | 'transform' | 'flip'
@@ -59,6 +59,19 @@ export function hybridPair(face: Face): [string, string] | null {
   if (colored.length === 0 || !colored.every((s) => /^\{[WUBRG]\/[WUBRG]\}$/.test(s))) return null
   const [a, b] = colored[0].slice(1, -1).split('/')
   return [a, b]
+}
+
+export const isLand = (face: Face) => /\bLand\b/.test(face.t)
+
+// Two-color lands are printed two-tone in the usual pair order: Breeding Pool is green, then blue.
+const PAIRS = ['WU', 'UB', 'BR', 'RG', 'GW', 'WB', 'UR', 'BG', 'RW', 'GU']
+
+/** The two colors of a two-tone frame, left then right: a hybrid card or a two-color land. */
+export function twoTone(face: Face): [string, string] | null {
+  const hybrid = hybridPair(face)
+  if (hybrid || !isLand(face) || face.c.length !== 2) return hybrid
+  const pair = PAIRS.find((p) => face.c.includes(p[0]) && face.c.includes(p[1]))!
+  return [pair[0], pair[1]]
 }
 
 /** The only name that counts: the front face, or both halves of a split card. */

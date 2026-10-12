@@ -1,10 +1,11 @@
-// QA mode: only cards with special frames, taking turns between frame types so rare
-// frames (aftermath, flip) come up as often as common ones (transform).
+// QA mode: only cards with special frames (and lands, whose frames show the colors of mana
+// they make), taking turns between frame types so rare frames (aftermath, flip) come up as
+// often as common ones (transform).
 import type { Card } from './card'
 import { seededShuffle } from './random'
 
 export const QA_CATEGORIES = [
-  'Adventure', 'Prepared', 'Split', 'Battle', 'MDFC', 'Aftermath', 'Transform', 'Flip', 'Saga', 'Class', 'Planeswalker',
+  'Adventure', 'Prepared', 'Split', 'Battle', 'MDFC', 'Aftermath', 'Transform', 'Flip', 'Saga', 'Class', 'Planeswalker', 'Land',
 ] as const
 export type QaCategory = (typeof QA_CATEGORIES)[number]
 
@@ -18,6 +19,7 @@ export function qaCategory(card: Card): QaCategory | null {
   if (/\bSaga\b/.test(card.t)) return 'Saga'
   if (/\bClass\b/.test(card.t)) return 'Class'
   if (/\bPlaneswalker\b/.test(card.t)) return 'Planeswalker'
+  if (/\bLand\b/.test(card.t)) return 'Land'
   return null
 }
 

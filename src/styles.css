@@ -756,7 +756,7 @@ a {
 /* Frame colors. --frame is the border art, --bar the name/type plates, --box the text box. */
 .frame-w { --frame: #d9d2bd; --bar: #f4efe1; --box: #f8f5ec; }
 .frame-u { --frame: #2a69a8; --bar: #c4d9ee; --box: #e3ecf5; }
-.frame-b { --frame: #3c3634; --bar: #c7beba; --box: #e5e0dd; }
+.frame-b { --frame: #1f1c1b; --bar: #bdb4af; --box: #dcd6d2; }
 .frame-r { --frame: #c0482f; --bar: #f2cdbd; --box: #f7e6de; }
 .frame-g { --frame: #2e6d45; --bar: #c6dcc4; --box: #e6efe3; }
 .frame-gold { --frame: #c29a46; --bar: #efdfb3; --box: #f6efdc; }
@@ -775,12 +775,12 @@ a {
 
 .frame-a-w { --frame-a: #d9d2bd; --bar-a: #f4efe1; --box-a: #f8f5ec; }
 .frame-a-u { --frame-a: #2a69a8; --bar-a: #c4d9ee; --box-a: #e3ecf5; }
-.frame-a-b { --frame-a: #3c3634; --bar-a: #c7beba; --box-a: #e5e0dd; }
+.frame-a-b { --frame-a: #1f1c1b; --bar-a: #bdb4af; --box-a: #dcd6d2; }
 .frame-a-r { --frame-a: #c0482f; --bar-a: #f2cdbd; --box-a: #f7e6de; }
 .frame-a-g { --frame-a: #2e6d45; --bar-a: #c6dcc4; --box-a: #e6efe3; }
 .frame-b-w { --frame-b: #d9d2bd; --bar-b: #f4efe1; --box-b: #f8f5ec; }
 .frame-b-u { --frame-b: #2a69a8; --bar-b: #c4d9ee; --box-b: #e3ecf5; }
-.frame-b-b { --frame-b: #3c3634; --bar-b: #c7beba; --box-b: #e5e0dd; }
+.frame-b-b { --frame-b: #1f1c1b; --bar-b: #bdb4af; --box-b: #dcd6d2; }
 .frame-b-r { --frame-b: #c0482f; --bar-b: #f2cdbd; --box-b: #f7e6de; }
 .frame-b-g { --frame-b: #2e6d45; --bar-b: #c6dcc4; --box-b: #e6efe3; }
 
@@ -791,6 +791,12 @@ a {
   --frame-fill: linear-gradient(90deg, var(--frame-a) 30%, var(--frame-b) 70%);
   --bar-fill: linear-gradient(90deg, var(--bar-a) 25%, var(--bar-b) 75%);
   --box-fill: linear-gradient(90deg, var(--box-a) 25%, var(--box-b) 75%);
+}
+
+/* Colored lands keep the brown land border; their colors show in the bars and text box. */
+.land-border {
+  --frame: #86684e;
+  --frame-fill: initial;
 }
 
 .face {

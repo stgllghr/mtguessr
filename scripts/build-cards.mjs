@@ -48,13 +48,32 @@ function layoutOf(raw) {
 const orderColors = (colors) => WUBRG.filter((c) => colors.includes(c)).join('')
 const costColors = (cost) => WUBRG.filter((c) => (cost ?? '').includes(c))
 
+const BASIC_TYPES = { Plains: 'W', Island: 'U', Swamp: 'B', Mountain: 'R', Forest: 'G' }
+const basicTypesIn = (text) => Object.entries(BASIC_TYPES).filter(([type]) => new RegExp(`\\b${type}\\b`).test(text)).map(([, c]) => c)
+
+/** The colors printed on a land's frame, since lands themselves are colorless: the mana it
+ * adds and its basic land types (Watery Grave), else the basic land types it fetches
+ * (Polluted Delta), else gold if it adds any color (Command Tower). */
+export function landColors(face) {
+  const text = face.oracle_text ?? ''
+  const symbols = (text.match(/\{[^}]+\}/g) ?? []).join('').match(/[WUBRG]/g) ?? []
+  const own = [...symbols, ...basicTypesIn(face.type_line ?? '')]
+  if (own.length) return orderColors(own)
+  const fetched = basicTypesIn(text)
+  if (fetched.length) return orderColors(fetched)
+  return /mana of any (one )?color|any combination of colors/.test(text) ? 'WUBRG' : ''
+}
+
 /** Frame colors for one face: split halves and adventure/prepared spells are colored by
  * their own cost, double-faced faces by their own colors, and the rest (the creature of an
- * adventure or prepared card, both halves of a flip card) by the card. */
+ * adventure or prepared card, both halves of a flip card) by the card. Colorless lands get
+ * the colors printed on their frame. */
 function faceColors(raw, face, layout, index) {
   const ownCost = layout === 'split' || layout === 'aftermath' || ((layout === 'adventure' || layout === 'prepare') && index > 0)
   if (ownCost) return orderColors(costColors(face.mana_cost))
-  return orderColors(face.colors ?? raw.colors ?? [])
+  const colors = orderColors(face.colors ?? raw.colors ?? [])
+  const type = face.type_line ?? raw.type_line ?? ''
+  return colors || !/\bLand\b/.test(type) ? colors : landColors({ ...face, type_line: type })
 }
 
 function compactFace(raw, face, layout, index) {

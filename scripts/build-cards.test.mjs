@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { isRealCard, isTopEligible, printingOverride, toCompact } from './build-cards.mjs'
+import { isRealCard, isTopEligible, landColors, printingOverride, toCompact } from './build-cards.mjs'
 
 const sample = JSON.parse(readFileSync(new URL('./fixtures/scryfall-sample.json', import.meta.url), 'utf8'))
 
@@ -51,6 +51,32 @@ describe('toCompact', () => {
   })
 })
 
+describe('landColors', () => {
+  const land = (type_line, oracle_text) => ({ type_line, oracle_text })
+
+  it('uses the colors of mana a land adds, including its reminder text', () => {
+    expect(landColors(land('Land — Island Swamp', '({T}: Add {U} or {B}.)\nAs Watery Grave enters, you may pay 2 life.'))).toBe('UB')
+    expect(landColors(land('Legendary Land', 'Castle Locthwain enters tapped unless you control a Swamp.\n{T}: Add {B}.\n{1}{B}{B}, {T}: Draw a card.'))).toBe('B')
+    expect(landColors(land('Land', 'This land enters tapped. As it enters, choose a color other than red.\n{T}: Add {R} or one mana of the chosen color.'))).toBe('R')
+    expect(landColors(land('Land — Island Mountain Plains', '({T}: Add {U}, {R}, or {W}.)\nCycling {3}'))).toBe('WUR')
+  })
+  it('uses the basic land types a land fetches', () => {
+    expect(landColors(land('Land', '{T}, Pay 1 life, Sacrifice Polluted Delta: Search your library for an Island or Swamp card, put it onto the battlefield, then shuffle.'))).toBe('UB')
+  })
+  it('is gold for a land that adds any color, and colorless otherwise', () => {
+    expect(landColors(land('Land', "{T}: Add one mana of any color in your commander's color identity."))).toBe('WUBRG')
+    expect(landColors(land('Land', '{T}: Add one mana of any type that a land you control could produce.'))).toBe('')
+    expect(landColors(land('Land', '{T}, Pay 1 life, Sacrifice Prismatic Vista: Search your library for a basic land card, put it onto the battlefield, then shuffle.'))).toBe('')
+    expect(landColors(land('Land', '{T}: Add {C}{C}. Ancient Tomb deals 2 damage to you.'))).toBe('')
+  })
+  it('colors lands in toCompact, and leaves colored lands and spells alone', () => {
+    const raw = (name, type_line, oracle_text, colors = []) => ({ name, type_line, oracle_text, colors, mana_cost: '' })
+    expect(toCompact(raw('Watery Grave', 'Land — Island Swamp', '({T}: Add {U} or {B}.)')).c).toBe('UB')
+    expect(toCompact(raw('Dryad Arbor', 'Land Creature — Forest Dryad', '', ['G'])).c).toBe('G')
+    expect(toCompact(raw('Sol Ring', 'Artifact', '{T}: Add {C}{C}.')).c).toBe('')
+  })
+})
+
 describe('toCompact printing and formats', () => {
   it('keeps the set code, collector number and rarity letter of the printing', () => {
     expect(toCompact(sample['Llanowar Elves'])).toMatchObject({ s: 'FDN', cn: '227', ry: 'C' })
@@ -93,13 +119,13 @@ describe('toCompact layouts', () => {
     expect(c.n).toBe('Heaven')
     expect(c.x[0].n).toBe('Earth')
   })
-  it('keeps the back face of double-faced cards with its own colors', () => {
+  it('keeps the back face of double-faced cards with its own colors (a land back with the colors printed on it)', () => {
     const delver = toCompact(sample['Delver of Secrets // Insectile Aberration'])
     expect(delver.lay).toBe('transform')
     expect(delver.x[0]).toMatchObject({ n: 'Insectile Aberration', c: 'U', p: '3', th: '2' })
     const mdfc = toCompact(sample.mdfc)
     expect(mdfc.lay).toBe('mdfc')
-    expect(mdfc.x[0]).toMatchObject({ n: 'Witch-Blessed Meadow', t: 'Land', c: '' })
+    expect(mdfc.x[0]).toMatchObject({ n: 'Witch-Blessed Meadow', t: 'Land', c: 'W' })
   })
   it('keeps adventure, prepared and flip second halves in the card colors', () => {
     const adventure = toCompact(sample.adventure)

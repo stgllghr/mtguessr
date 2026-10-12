@@ -71,7 +71,7 @@ function choices(group: Group): { pool: Pool; label: string; note: string }[] {
         { pool: 'legends', label: 'Legendary creatures', note: 'Every legend in Magic’s history' },
       ]
     case 'qa':
-      return [{ pool: 'qa', label: 'QA: special frames', note: 'Takes turns through every special card frame' }]
+      return [{ pool: 'qa', label: 'QA: special frames', note: 'Takes turns through every special card frame, and lands' }]
     case 'set':
       return []
     default:

@@ -2,19 +2,21 @@
 // frames scale with the card, and rotated parts reuse the same pieces.
 import { useContext, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { patchRects } from '../game/artHints'
-import { hybridPair, imageUrl, type Face } from '../game/card'
+import { imageUrl, isLand, twoTone, type Face } from '../game/card'
 import type { CardView, FaceView, InfoLine as Info, Section } from '../game/cardGame'
 import { MaskContext, TokenText } from './TokenText'
 import { useFit } from './useFit'
 
-/** The frame color classes for a face: one color, gold, a two-tone hybrid, or neutral in hard mode. */
+/** The frame color classes for a face: one color, gold, two-tone, or neutral in hard mode.
+ * Lands (but not artifact lands) keep a brown border, with their colors in the bars and text box. */
 export function frameOf(face: Face, hard: boolean): string {
   if (hard) return 'frame-hidden'
-  const hybrid = hybridPair(face)
-  if (hybrid) return `frame-hybrid frame-a-${hybrid[0].toLowerCase()} frame-b-${hybrid[1].toLowerCase()}`
-  if (face.c.length > 1) return 'frame-gold'
-  if (face.c.length === 1) return `frame-${face.c.toLowerCase()}`
-  return /\bLand\b/.test(face.t) ? 'frame-land' : 'frame-artifact'
+  const land = isLand(face) && !/\bArtifact\b/.test(face.t)
+  const pair = twoTone(face)
+  if (pair) return `frame-hybrid frame-a-${pair[0].toLowerCase()} frame-b-${pair[1].toLowerCase()}${land ? ' land-border' : ''}`
+  if (face.c.length > 1) return `frame-gold${land ? ' land-border' : ''}`
+  if (face.c.length === 1) return `frame-${face.c.toLowerCase()}${land ? ' land-border' : ''}`
+  return land ? 'frame-land' : 'frame-artifact'
 }
 
 /** A box whose text shrinks until it stops overflowing, like printed cards do. */

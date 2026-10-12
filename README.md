@@ -101,8 +101,8 @@ The game logic lives in `src/game/` (plain TypeScript with unit tests) and the i
 ### QA mode
 
 Add `?qa` to the address for a hidden **QA: special frames** pool. It takes turns through every
-special card frame, with **Reveal** and **Skip** buttons, for checking layouts against the real
-cards.
+special card frame and lands, with **Reveal** and **Skip** buttons, for checking layouts and
+frame colors against the real cards.
 
 ## Credits
 
