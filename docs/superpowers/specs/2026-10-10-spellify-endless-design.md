@@ -1,5 +1,7 @@
 # Spellify Endless — Design
 
+> The game was renamed **MTGuessr** before its public release; these notes keep the working name.
+
 An endless-mode clone of EDHREC's Spellify (https://edhrec.com/games/spellify).
 Static web app, playable locally, deployable to Vercel with zero config.
 

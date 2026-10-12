@@ -6,7 +6,7 @@ import { bestKey, type Bests, type Run, type Settings } from '../game/run'
 import { fetchSets, type SetInfo } from '../data/scryfall'
 import { settingsLabel } from './labels'
 
-const TITLE = [...'SPELLIFY']
+const TITLE = [...'MTGuessr']
 const REVEAL_ORDER = [3, 1, 7, 5]
 
 function Title() {
@@ -19,7 +19,7 @@ function Title() {
   }, [shown])
   const hidden = new Set(REVEAL_ORDER.slice(shown))
   return (
-    <h1 className="title" aria-label="Spellify Endless">
+    <h1 className="title" aria-label="MTGuessr Endless">
       <span className="title-word" aria-hidden>
         {TITLE.map((ch, i) =>
           hidden.has(i) ? <span key={i} className="title-slot" /> : <span key={i} className={REVEAL_ORDER.includes(i) ? 'fresh' : ''}>{ch}</span>,
@@ -107,6 +107,10 @@ export function StartScreen({ qa, settings, onSettings, count, bests, saved, bus
     <main className="start">
       <Title />
       <p className="tagline">Name the Magic card before your {MAX_TRIES} tries run out. Then do it again.</p>
+      <p className="origin">
+        An endless take on <a href="https://edhrec.com/games/spellify">Spellify</a> by{' '}
+        <a href="https://edhrec.com">EDHREC</a>. Play their daily puzzle there.
+      </p>
 
       <fieldset className="groups">
         <legend>Play cards from</legend>
@@ -207,11 +211,11 @@ export function StartScreen({ qa, settings, onSettings, count, bests, saved, bus
       <p className="credits">
         Card data and images from <a href="https://scryfall.com">Scryfall</a>. Commander popularity from{' '}
         <a href="https://edhrec.com">EDHREC</a>; format staples from{' '}
-        <a href="https://www.mtgo.com/decklists">Magic Online tournament results</a>. Inspired by EDHREC's{' '}
+        <a href="https://www.mtgo.com/decklists">Magic Online tournament results</a>. Based on EDHREC's{' '}
         <a href="https://edhrec.com/games/spellify">Spellify</a>; not affiliated with EDHREC or Scryfall.
       </p>
       <p className="credits">
-        Spellify Endless is unofficial Fan Content permitted under the{' '}
+        MTGuessr is unofficial Fan Content permitted under the{' '}
         <a href="https://company.wizards.com/en/legal/fancontentpolicy">Fan Content Policy</a>. Not approved/endorsed
         by Wizards. Portions of the materials used are property of Wizards of the Coast. ©Wizards of the Coast LLC.
       </p>

@@ -10,7 +10,7 @@ const WINDOW_DAYS = 42
 const MIN_SHARE = 0.01 // a staple is in at least 1% of decks
 const DELAY_MS = 400
 const CONCURRENCY = 4
-const HEADERS = { 'User-Agent': 'SpellifyEndless/0.1 (fan-made card guessing game; staples refresh)', Accept: 'text/html' }
+const HEADERS = { 'User-Agent': 'MTGuessr/0.1 (fan-made card guessing game; staples refresh)', Accept: 'text/html' }
 const TIMEOUT_MS = 20000
 const ATTEMPTS = 3
 

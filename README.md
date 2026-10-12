@@ -1,9 +1,10 @@
-# Spellify Endless
+# MTGuessr
 
-A fan-made, endless take on EDHREC's [Spellify](https://edhrec.com/games/spellify). You get a
-Magic: The Gathering card with every word on it blanked out. Guess letters, numbers and mana
-symbols to fill in the blanks, then name the card before your 13 tries run out. Solve it and the
-next card comes up; miss one and the run is over.
+A fan-made, endless Magic: The Gathering card-guessing game, based on
+**[Spellify](https://edhrec.com/games/spellify) by [EDHREC](https://edhrec.com)**. Go play their
+daily puzzle too! MTGuessr turns it into an endless run: you get a card with every word on it
+blanked out, guess letters, numbers and mana symbols to fill in the blanks, then name the card
+before your 13 tries run out. Solve it and the next card comes up; miss one and the run is over.
 
 ## How it plays
 
@@ -78,13 +79,17 @@ cards.
 
 ## Credits
 
-Card data and images from [Scryfall](https://scryfall.com). Commander popularity from
-[EDHREC](https://edhrec.com). Format staples from
-[Magic Online tournament results](https://www.mtgo.com/decklists). Mana symbols from
-[Mana](https://mana.andrewgioia.com) by Andrew Gioia. Inspired by EDHREC's
-[Spellify](https://edhrec.com/games/spellify). Not affiliated with EDHREC or Scryfall.
+- **Game idea:** [Spellify](https://edhrec.com/games/spellify) by [EDHREC](https://edhrec.com).
+  MTGuessr is an independent fan project and isn't affiliated with EDHREC.
+- **Card data and images:** [Scryfall](https://scryfall.com) (not affiliated).
+- **Commander popularity:** [EDHREC](https://edhrec.com).
+- **Format staples:** [Magic Online tournament results](https://www.mtgo.com/decklists).
+- **Mana symbols:** [Mana](https://mana.andrewgioia.com) by Andrew Gioia.
 
-Spellify Endless is unofficial Fan Content permitted under the
+The code is under the [MIT License](LICENSE). Card text, names, images and other Magic: The
+Gathering materials are not covered by it.
+
+MTGuessr is unofficial Fan Content permitted under the
 [Fan Content Policy](https://company.wizards.com/en/legal/fancontentpolicy). Not
 approved/endorsed by Wizards. Portions of the materials used are property of Wizards of the
 Coast. ©Wizards of the Coast LLC.

@@ -9,7 +9,7 @@ import { createGunzip } from 'node:zlib'
 import { formatSetCodes, pickFormatPrinting, pickOriginalArtPrinting, slimPrinting } from './printings.mjs'
 
 const TOP_COUNT = 10000
-const UA = { 'User-Agent': 'SpellifyEndless/0.1', Accept: 'application/json' }
+const UA = { 'User-Agent': 'MTGuessr/0.1', Accept: 'application/json' }
 
 const NON_CARD_LAYOUTS = new Set([
   'token', 'double_faced_token', 'emblem', 'art_series', 'vanguard', 'planar', 'scheme',

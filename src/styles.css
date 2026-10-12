@@ -158,6 +158,18 @@ a {
   padding-left: 0.5em;
 }
 
+.origin {
+  margin: -10px 0 0;
+  text-align: center;
+  font-size: 15px;
+  color: var(--dust);
+}
+
+.origin a {
+  color: var(--ember-hi);
+  font-weight: 700;
+}
+
 .tagline {
   margin: 0;
   text-align: center;

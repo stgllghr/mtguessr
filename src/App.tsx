@@ -22,7 +22,7 @@ import {
   type Run,
   type Settings,
 } from './game/run'
-import { load, save } from './game/storage'
+import { load, migrate, save } from './game/storage'
 import { charKey } from './game/tokens'
 import { CardFace } from './ui/CardFace'
 import { EndOfCard } from './ui/EndOfCard'
@@ -36,7 +36,9 @@ import { StartScreen } from './ui/StartScreen'
 const QA = typeof location !== 'undefined' && new URLSearchParams(location.search).has('qa')
 const allowed = (pool: Pool) => QA || pool !== 'qa'
 
-const KEYS = { settings: 'spellify-endless:settings', bests: 'spellify-endless:bests', run: 'spellify-endless:run' }
+const KEYS = { settings: 'mtguessr:settings', bests: 'mtguessr:bests', run: 'mtguessr:run' }
+// Saves from before the game was renamed move over once.
+for (const key of Object.values(KEYS)) migrate(key.replace('mtguessr:', 'spellify-endless:'), key)
 
 async function fetchJson<T>(file: string): Promise<T> {
   const res = await fetch(`/${file}`)
@@ -234,7 +236,7 @@ export default function App() {
     <div className="play">
       <header className="topbar">
         <button type="button" className="wordmark" onClick={() => setScreen('start')} aria-label="Back to the start screen">
-          Spellify <span>Endless</span>
+          MTGuessr
         </button>
         {qa ? (
           <p className="run-meta">

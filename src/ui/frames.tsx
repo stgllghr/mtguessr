@@ -356,7 +356,7 @@ export function CardBack() {
   return (
     <div className="card card-back" aria-label="Card back">
       <div className="card-back-oval">
-        <span>Spellify</span>
+        <span>MTGuessr</span>
       </div>
       <div className="card-back-pips" aria-hidden>
         <i className="ms ms-cost ms-w" />

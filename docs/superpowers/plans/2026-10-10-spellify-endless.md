@@ -1,5 +1,7 @@
 # Spellify Endless Implementation Plan
 
+> The game was renamed **MTGuessr** before its public release; these notes keep the working name.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** A static web app that plays endless Spellify (guess the hidden MTG card) with streaks, difficulty tiers and hard mode.
