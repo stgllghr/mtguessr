@@ -485,5 +485,48 @@
    }
   ],
   "keywords": []
+ },
+ "adventure-two-colors": {
+  "id": "770ee3da-d33e-466f-9a2e-ad2d08ef5012",
+  "name": "Callous Sell-Sword // Burn Together",
+  "layout": "adventure",
+  "set_type": "expansion",
+  "games": [
+   "paper",
+   "arena",
+   "mtgo"
+  ],
+  "digital": false,
+  "edhrec_rank": 13404,
+  "legalities": {
+   "commander": "legal"
+  },
+  "colors": [
+   "B"
+  ],
+  "mana_cost": "{1}{B} // {R}",
+  "type_line": "Creature — Human Soldier // Sorcery — Adventure",
+  "artist": "Valera Lutfullina",
+  "power": "2",
+  "toughness": "2",
+  "card_faces": [
+   {
+    "name": "Callous Sell-Sword",
+    "mana_cost": "{1}{B}",
+    "type_line": "Creature — Human Soldier",
+    "oracle_text": "This creature enters with a +1/+1 counter on it for each creature that died under your control this turn.",
+    "artist": "Valera Lutfullina",
+    "power": "2",
+    "toughness": "2"
+   },
+   {
+    "name": "Burn Together",
+    "mana_cost": "{R}",
+    "type_line": "Sorcery — Adventure",
+    "oracle_text": "Target creature you control deals damage equal to its power to any other target. Then sacrifice it.",
+    "artist": "Valera Lutfullina"
+   }
+  ],
+  "keywords": []
  }
 }

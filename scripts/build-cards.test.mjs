@@ -78,6 +78,11 @@ describe('toCompact layouts', () => {
     expect(toCompact(sample.prepare)).toMatchObject({ lay: 'prepare', x: [expect.objectContaining({ n: 'Have a Bite', c: 'B' })] })
     expect(toCompact(sample.flip)).toMatchObject({ lay: 'flip', x: [expect.objectContaining({ n: 'Nighteyes the Desecrator', p: '4', th: '2' })] })
   })
+  it('colors an adventure or prepared spell by its own cost, apart from the creature', () => {
+    const c = toCompact(sample['adventure-two-colors'])
+    expect(c.c).toBe('B')
+    expect(c.x[0]).toMatchObject({ n: 'Burn Together', c: 'R' })
+  })
   it('leaves single-faced cards without a layout tag', () => {
     const c = toCompact(sample['Llanowar Elves'])
     expect('lay' in c).toBe(false)

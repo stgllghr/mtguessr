@@ -141,8 +141,9 @@ function Upright({ face, hard, inset }: { face: FaceView; hard: boolean; inset?:
       </div>
     )
   }
+  // The spell panel has its own frame color: a black creature can carry a red adventure.
   const panel = inset && (
-    <div className="inset">
+    <div className={`inset frame-${frameOf(inset.face.face, hard)}`}>
       <div className="bar name-bar inset-bar">
         <Fit axis="x" min={0.4} className="name">
           <TokenText tokens={inset.face.name} />

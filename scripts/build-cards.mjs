@@ -44,14 +44,16 @@ function layoutOf(raw) {
 const orderColors = (colors) => WUBRG.filter((c) => colors.includes(c)).join('')
 const costColors = (cost) => WUBRG.filter((c) => (cost ?? '').includes(c))
 
-/** Frame colors for one face: split halves are colored by their own cost, double-faced
- * faces by their own colors, and everything else (adventure, prepared, flip) by the card. */
-function faceColors(raw, face, layout) {
-  if (layout === 'split' || layout === 'aftermath') return orderColors(costColors(face.mana_cost))
+/** Frame colors for one face: split halves and adventure/prepared spells are colored by
+ * their own cost, double-faced faces by their own colors, and the rest (the creature of an
+ * adventure or prepared card, both halves of a flip card) by the card. */
+function faceColors(raw, face, layout, index) {
+  const ownCost = layout === 'split' || layout === 'aftermath' || ((layout === 'adventure' || layout === 'prepare') && index > 0)
+  if (ownCost) return orderColors(costColors(face.mana_cost))
   return orderColors(face.colors ?? raw.colors ?? [])
 }
 
-function compactFace(raw, face, layout) {
+function compactFace(raw, face, layout, index) {
   const out = {
     n: face.name,
     m: face.mana_cost ?? '',
@@ -63,7 +65,7 @@ function compactFace(raw, face, layout) {
     th: face.toughness,
     l: face.loyalty,
     d: face.defense,
-    c: faceColors(raw, face, layout),
+    c: faceColors(raw, face, layout, index),
   }
   for (const k of Object.keys(out)) if (out[k] === undefined || (out[k] === '' && !['m', 'o', 'c'].includes(k))) delete out[k]
   return out
@@ -72,13 +74,13 @@ function compactFace(raw, face, layout) {
 export function toCompact(raw) {
   const layout = layoutOf(raw)
   const faces = raw.card_faces ?? [raw]
-  const card = { ...compactFace(raw, faces[0], layout) }
+  const card = { ...compactFace(raw, faces[0], layout, 0) }
   if (faces[0].name !== raw.name) card.full = raw.name
   if (raw.edhrec_rank !== undefined) card.r = raw.edhrec_rank
   card.id = raw.id
   if (layout && faces.length > 1) {
     card.lay = layout
-    card.x = faces.slice(1).map((f) => compactFace(raw, f, layout))
+    card.x = faces.slice(1).map((f, i) => compactFace(raw, f, layout, i + 1))
   }
   return card
 }
